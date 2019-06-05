@@ -1,0 +1,17 @@
+[package]
+name = "prometheus_exporter_base"
+version = "0.1.0"
+authors = ["Francesco Cogno <francesco.cogno@outlook.com>"]
+edition = "2018"
+
+[dependencies]
+log            = "*"
+env_logger     = "*"
+futures        = "*"
+clap           = "*"
+serde_json     = "*"
+serde          = "*"
+serde_derive   = "*"
+failure        = "*"
+hyper          = "*"
+http           = "*"
