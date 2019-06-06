@@ -1,6 +1,5 @@
-extern crate serde_json;
-#[macro_use]
 extern crate failure;
+extern crate serde_json;
 use futures::future::{done, ok, Either, Future};
 use http::StatusCode;
 use hyper::service::service_fn;
@@ -8,9 +7,7 @@ use hyper::{Body, Request, Response, Server};
 use log::{error, trace};
 use std::fmt::Debug;
 use std::sync::Arc;
-mod exporter_error;
 mod render_to_prometheus;
-pub use exporter_error::ExporterError;
 pub use render_to_prometheus::PrometheusCounter;
 
 fn check_compliance(req: &Request<Body>) -> Result<(), Response<Body>> {
@@ -42,7 +39,7 @@ where
             Request<Body>,
             &Arc<O>,
         )
-            -> Box<Future<Item = Response<Body>, Error = ExporterError> + Send + 'static>
+            -> Box<Future<Item = Response<Body>, Error = failure::Error> + Send + 'static>
         + Send
         + Clone
         + 'static,
@@ -71,7 +68,7 @@ where
             Request<Body>,
             &Arc<O>,
         )
-            -> Box<Future<Item = Response<Body>, Error = ExporterError> + Send + 'static>
+            -> Box<Future<Item = Response<Body>, Error = failure::Error> + Send + 'static>
         + Send
         + Clone
         + 'static,
