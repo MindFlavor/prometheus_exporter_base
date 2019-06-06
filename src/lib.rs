@@ -9,8 +9,8 @@ use log::{error, trace};
 use std::fmt::Debug;
 use std::sync::Arc;
 mod exporter_error;
-use exporter_error::ExporterError;
 mod render_to_prometheus;
+pub use exporter_error::ExporterError;
 pub use render_to_prometheus::PrometheusCounter;
 
 fn check_compliance(req: &Request<Body>) -> Result<(), Response<Body>> {

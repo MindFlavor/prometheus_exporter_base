@@ -79,7 +79,6 @@ mod tests {
         pc.attributes.push(("instance", "".to_owned()));
 
         for _ in 0..4 {
-            let n_string = number.to_string();
             pc.attributes[1].1 = number.to_string();
             let ret = pc.render_counter(&*number.to_string());
 
