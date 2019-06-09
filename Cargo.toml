@@ -1,8 +1,18 @@
 [package]
 name = "prometheus_exporter_base"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 edition = "2018"
+description    = "Prometheus Rust exporters base crate with boilerplate"
+
+readme         = "README.md"
+license        = "MIT"
+repository     = "https://github.com/MindFlavor/prometheus_exporter_base"
+documentation  = "https://github.com/MindFlavor/prometheus_exporter_base"
+homepage       = "https://github.com/MindFlavor/prometheus_exporter_base"
+
+keywords       = ["prometheus", "exporter"]
+categories     = ["database"]
 
 [dependencies]
 log            = "*"
@@ -10,8 +20,6 @@ env_logger     = "*"
 futures        = "*"
 clap           = "*"
 serde_json     = "*"
-serde          = "*"
-serde_derive   = "*"
 failure        = "*"
 hyper          = "*"
 http           = "*"

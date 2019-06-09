@@ -6,7 +6,6 @@ pub struct PrometheusCounter<'a> {
     pub counter_name: &'a str,
     pub counter_type: &'a str,
     pub counter_help: &'a str,
-    //pub attributes: Vec<(&'a str, String)>,
 }
 
 impl<'a> PrometheusCounter<'a> {
@@ -19,7 +18,6 @@ impl<'a> PrometheusCounter<'a> {
             counter_name,
             counter_type,
             counter_help,
-            //attributes: Vec::new(),
         }
     }
 
@@ -30,6 +28,28 @@ impl<'a> PrometheusCounter<'a> {
         )
     }
 
+    /// Returns the valid Prometheus string, given the optional attributes and the value.
+    /// The counter name is in `&self`.
+    ///
+    /// # Arguments
+    ///
+    /// * `attributes` - A slice of pairs indicating Attribute-Value. It is optional.
+    /// * `value` - A Display-able value that will be appended as counter value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    ///  use prometheus_exporter_base::PrometheusCounter;
+    ///  let pc = PrometheusCounter::new("folder_size", "counter", "Size of the folder");
+    ///  let mut s = pc.render_header();
+
+    ///  let mut attributes = Vec::new();
+    ///  attributes.push(("folder", "/var/log/"));
+    ///  s.push_str(&pc.render_counter(Some(&attributes), 1024));
+
+    ///  attributes[0].1 = "/tmp";
+    ///  s.push_str(&pc.render_counter(Some(&attributes), 5_000_000));
+    /// ```
     pub fn render_counter<N>(&self, attributes: Option<&[(&'a str, &'a str)]>, value: N) -> String
     where
         N: std::fmt::Display,
@@ -76,7 +96,7 @@ mod tests {
 
     #[test]
     fn test_attributes() {
-        let mut pc = PrometheusCounter::new("pippo_total", "counter", "Number of pippos");
+        let pc = PrometheusCounter::new("pippo_total", "counter", "Number of pippos");
         let mut number = 0;
 
         let mut attributes = Vec::new();
