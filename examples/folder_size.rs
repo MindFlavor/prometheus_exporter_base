@@ -77,14 +77,15 @@ fn main() {
             let joined_future = future_tmp.join(future_log);
 
             joined_future.and_then(|(total_size_log, total_size_tmp)| {
-                let mut pc = PrometheusCounter::new("folder_size", "counter", "Size of the folder");
+                let pc = PrometheusCounter::new("folder_size", "counter", "Size of the folder");
                 let mut s = pc.render_header();
 
-                pc.attributes.push(("folder", "/var/log/".to_owned()));
-                s.push_str(&pc.render_counter(total_size_log));
+                let mut attributes = Vec::new();
+                attributes.push(("folder", "/var/log/"));
+                s.push_str(&pc.render_counter(Some(&attributes), total_size_log));
 
-                pc.attributes[0].1 = "/tmp".to_owned();
-                s.push_str(&pc.render_counter(total_size_tmp));
+                attributes[0].1 = "/tmp";
+                s.push_str(&pc.render_counter(Some(&attributes), total_size_tmp));
 
                 ok(Response::new(Body::from(s)))
             })
