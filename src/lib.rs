@@ -1,14 +1,57 @@
 extern crate failure;
 extern crate serde_json;
 use futures::future::{done, ok, Either, Future};
+use futures::stream::Stream;
 use http::StatusCode;
 use hyper::service::service_fn;
+use hyper::Client;
 use hyper::{Body, Request, Response, Server};
-use log::{error, trace};
+use log::{debug, error, trace};
+use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::sync::Arc;
 mod render_to_prometheus;
 pub use render_to_prometheus::PrometheusCounter;
+
+#[inline]
+fn extract_body(
+    req: hyper::client::ResponseFuture,
+) -> impl Future<Item = String, Error = failure::Error> + Send {
+    req.from_err().and_then(|resp| {
+        debug!("response == {:?}", resp);
+        let (_parts, body) = resp.into_parts();
+        body.concat2()
+            .from_err()
+            .and_then(|complete_body| done(String::from_utf8(complete_body.to_vec())).from_err())
+    })
+}
+
+pub fn create_string_future_from_hyper_request(
+    request: hyper::Request<hyper::Body>,
+) -> impl Future<Item = String, Error = failure::Error> {
+    let cli = Client::new();
+
+    extract_body(cli.request(request))
+        .from_err()
+        .and_then(|text: String| {
+            debug!("received_text == {:?}", text);
+            ok(text)
+        })
+}
+
+pub fn create_deserialize_future_from_hyper_request<T>(
+    request: hyper::Request<hyper::Body>,
+) -> impl Future<Item = T, Error = failure::Error>
+where
+    T: DeserializeOwned + std::fmt::Debug,
+{
+    create_string_future_from_hyper_request(request)
+        .and_then(|text| done(serde_json::from_str(&text)).from_err())
+        .and_then(|t: T| {
+            debug!("deserialized object == {:?}", t);
+            ok(t)
+        })
+}
 
 fn check_compliance(req: &Request<Body>) -> Result<(), Response<Body>> {
     if req.uri() != "/metrics" {
