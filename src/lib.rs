@@ -29,9 +29,10 @@ fn extract_body(
 pub fn create_string_future_from_hyper_request(
     request: hyper::Request<hyper::Body>,
 ) -> impl Future<Item = String, Error = failure::Error> {
-    let cli = Client::new();
+    let https = hyper_rustls::HttpsConnector::new(4);
+    let client = Client::builder().build::<_, hyper::Body>(https);
 
-    extract_body(cli.request(request))
+    extract_body(client.request(request))
         .from_err()
         .and_then(|text: String| {
             debug!("received_text == {:?}", text);
