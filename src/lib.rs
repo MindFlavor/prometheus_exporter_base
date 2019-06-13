@@ -82,8 +82,7 @@ where
     P: FnOnce(
             Request<Body>,
             &Arc<O>,
-        )
-            -> Box<Future<Item = Response<Body>, Error = failure::Error> + Send + 'static>
+        ) -> Box<Future<Item = String, Error = failure::Error> + Send + 'static>
         + Send
         + Clone
         + 'static,
@@ -92,7 +91,7 @@ where
 
     done(check_compliance(&req)).then(move |res| match res {
         Ok(_) => Either::A(perform_request_box(req, &options).then(|res| match res {
-            Ok(body) => ok(body),
+            Ok(body) => ok(Response::new(Body::from(body))),
             Err(err) => {
                 error!("internal server error: {:?}", err);
                 ok(Response::builder()
@@ -111,8 +110,7 @@ where
     P: FnOnce(
             Request<Body>,
             &Arc<O>,
-        )
-            -> Box<Future<Item = Response<Body>, Error = failure::Error> + Send + 'static>
+        ) -> Box<Future<Item = String, Error = failure::Error> + Send + 'static>
         + Send
         + Clone
         + 'static,

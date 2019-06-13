@@ -1,6 +1,5 @@
 use clap::{crate_authors, crate_name, crate_version, Arg};
 use futures::future::{done, ok, Future};
-use hyper::{Body, Response};
 use log::{info, trace};
 use prometheus_exporter_base::{render_prometheus, PrometheusCounter};
 use std::env;
@@ -87,7 +86,7 @@ fn main() {
                 attributes[0].1 = "/tmp";
                 s.push_str(&pc.render_counter(Some(&attributes), total_size_tmp));
 
-                ok(Response::new(Body::from(s)))
+                ok(s)
             })
         })
     });
