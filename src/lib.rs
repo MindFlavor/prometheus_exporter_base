@@ -12,6 +12,8 @@ use std::fmt::Debug;
 use std::sync::Arc;
 mod render_to_prometheus;
 pub use render_to_prometheus::PrometheusCounter;
+mod metric_type;
+pub use metric_type::MetricType;
 
 #[inline]
 fn extract_body(
