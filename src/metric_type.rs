@@ -25,7 +25,7 @@ macro_rules! string_enum {
             }
         }
 
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, PartialEq)]
         pub enum $name {
             $($lit,)*
         }
@@ -41,14 +41,19 @@ macro_rules! string_enum {
             }
         }
 
+        impl std::convert::AsRef<str> for $name {
+            fn as_ref(&self) -> &'static str {
+                 match self {
+                     $($name::$lit => stringify!($lit),)*
+                 }
+            }
+        }
+
         impl std::fmt::Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 write!(
                     f,
-                    "{}",
-                    match self {
-                        $($name::$lit => stringify!($lit),)*
-                    }
+                    "{}", self.as_ref()
                 )
             }
         }
@@ -63,3 +68,31 @@ string_enum!(
     Histogram,
     Summary
 );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::convert::TryFrom;
+
+    #[test]
+    fn test_as_ref() {
+        assert_eq!("Gauge", MetricType::Gauge.as_ref());
+        assert_eq!("Counter", MetricType::Counter.as_ref());
+        assert_eq!("Gauge", MetricType::Gauge.as_ref());
+        assert_eq!("Histogram", MetricType::Histogram.as_ref());
+    }
+
+    #[test]
+    fn test_display() {
+        assert_eq!("Gauge", format!("{}", MetricType::Gauge));
+    }
+
+    #[test]
+    fn test_try_from_ok() {
+        assert_eq!(
+            MetricType::Histogram,
+            MetricType::try_from("Histogram").unwrap()
+        );
+    }
+
+}

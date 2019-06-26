@@ -1,3 +1,5 @@
+use crate::MetricType;
+
 pub trait RenderToPrometheus {
     fn render(&self) -> String;
 }
@@ -11,7 +13,7 @@ pub struct PrometheusCounter<'a> {
 impl<'a> PrometheusCounter<'a> {
     pub fn new(
         counter_name: &'a str,
-        counter_type: &'a str,
+        counter_type: &'a str, //MetricType,
         counter_help: &'a str,
     ) -> PrometheusCounter<'a> {
         PrometheusCounter {
