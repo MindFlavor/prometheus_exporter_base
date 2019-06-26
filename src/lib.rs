@@ -11,7 +11,7 @@ use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::sync::Arc;
 mod render_to_prometheus;
-pub use render_to_prometheus::PrometheusCounter;
+pub use render_to_prometheus::PrometheusMetric;
 mod metric_type;
 pub use metric_type::MetricType;
 
