@@ -1,7 +1,7 @@
 use clap::{crate_authors, crate_name, crate_version, Arg};
 use futures::future::{done, ok, Future};
 use log::{info, trace};
-use prometheus_exporter_base::{render_prometheus, PrometheusCounter};
+use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
 use std::env;
 use std::fs::read_dir;
 
@@ -76,15 +76,16 @@ fn main() {
             let joined_future = future_tmp.join(future_log);
 
             joined_future.and_then(|(total_size_log, total_size_tmp)| {
-                let pc = PrometheusCounter::new("folder_size", "counter", "Size of the folder");
+                let pc =
+                    PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
                 let mut s = pc.render_header();
 
                 let mut attributes = Vec::new();
                 attributes.push(("folder", "/var/log/"));
-                s.push_str(&pc.render_counter(Some(&attributes), total_size_log));
+                s.push_str(&pc.render_sample(Some(&attributes), total_size_log));
 
                 attributes[0].1 = "/tmp";
-                s.push_str(&pc.render_counter(Some(&attributes), total_size_tmp));
+                s.push_str(&pc.render_sample(Some(&attributes), total_size_tmp));
 
                 ok(s)
             })
