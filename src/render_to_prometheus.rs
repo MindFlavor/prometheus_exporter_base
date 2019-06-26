@@ -6,14 +6,14 @@ pub trait RenderToPrometheus {
 
 pub struct PrometheusCounter<'a> {
     pub counter_name: &'a str,
-    pub counter_type: &'a str,
+    pub counter_type: MetricType,
     pub counter_help: &'a str,
 }
 
 impl<'a> PrometheusCounter<'a> {
     pub fn new(
         counter_name: &'a str,
-        counter_type: &'a str, //MetricType,
+        counter_type: MetricType,
         counter_help: &'a str,
     ) -> PrometheusCounter<'a> {
         PrometheusCounter {
@@ -41,8 +41,8 @@ impl<'a> PrometheusCounter<'a> {
     /// # Example
     ///
     /// ```
-    ///  use prometheus_exporter_base::PrometheusCounter;
-    ///  let pc = PrometheusCounter::new("folder_size", "counter", "Size of the folder");
+    ///  use prometheus_exporter_base::{MetricType, PrometheusCounter};
+    ///  let pc = PrometheusCounter::new("folder_size", MetricType::Counter, "Size of the folder");
     ///  let mut s = pc.render_header();
 
     ///  let mut attributes = Vec::new();
@@ -85,10 +85,11 @@ impl<'a> PrometheusCounter<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::MetricType;
 
     #[test]
     fn test_header() {
-        let pc = PrometheusCounter::new("pippo_total", "counter", "Number of pippos");
+        let pc = PrometheusCounter::new("pippo_total", MetricType::Counter, "Number of pippos");
 
         assert_eq!(
             pc.render_header(),
@@ -98,7 +99,7 @@ mod tests {
 
     #[test]
     fn test_attributes() {
-        let pc = PrometheusCounter::new("pippo_total", "counter", "Number of pippos");
+        let pc = PrometheusCounter::new("pippo_total", MetricType::Counter, "Number of pippos");
         let mut number = 0;
 
         let mut attributes = Vec::new();
@@ -127,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_no_attributes() {
-        let pc = PrometheusCounter::new("gigino_total", "counter", "Number of giginos");
+        let pc = PrometheusCounter::new("gigino_total", MetricType::Counter, "Number of giginos");
         assert_eq!(
             pc.render_counter(None, 100),
             format!("gigino_total {}\n", 100)

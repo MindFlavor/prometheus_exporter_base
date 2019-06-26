@@ -84,7 +84,7 @@ where
     P: FnOnce(
             Request<Body>,
             &Arc<O>,
-        ) -> Box<Future<Item = String, Error = failure::Error> + Send + 'static>
+        ) -> Box<dyn Future<Item = String, Error = failure::Error> + Send + 'static>
         + Send
         + Clone
         + 'static,
@@ -112,7 +112,7 @@ where
     P: FnOnce(
             Request<Body>,
             &Arc<O>,
-        ) -> Box<Future<Item = String, Error = failure::Error> + Send + 'static>
+        ) -> Box<dyn Future<Item = String, Error = failure::Error> + Send + 'static>
         + Send
         + Clone
         + 'static,

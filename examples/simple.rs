@@ -1,5 +1,5 @@
 use futures::future::{done, ok, Future};
-use prometheus_exporter_base::{render_prometheus, PrometheusCounter};
+use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusCounter};
 use std::fs::read_dir;
 
 #[derive(Debug, Clone)]
@@ -30,7 +30,11 @@ fn main() {
 
             let future_log = done(calculate_file_size("/var/log")).from_err();
             future_log.and_then(|total_size_log| {
-                let pc = PrometheusCounter::new("folder_size", "counter", "Size of the folder");
+                let pc = PrometheusCounter::new(
+                    "folder_size",
+                    MetricType::Counter,
+                    "Size of the folder",
+                );
                 let mut s = pc.render_header();
 
                 let mut attributes = Vec::new();
