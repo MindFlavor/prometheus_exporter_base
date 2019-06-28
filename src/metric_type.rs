@@ -1,5 +1,5 @@
 macro_rules! string_enum {
-    ($name:ident, $error:ident, $($lit:ident),*) => {
+    ($name:ident, $error:ident, $($lit:ident, $str:expr),*) => {
 
         #[derive(Debug, Clone)]
         pub struct $error {
@@ -25,7 +25,7 @@ macro_rules! string_enum {
             }
         }
 
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, PartialEq)]
         pub enum $name {
             $($lit,)*
         }
@@ -35,9 +35,17 @@ macro_rules! string_enum {
 
             fn try_from(txt: &str) -> Result<Self, Self::Error> {
                 match txt {
-                    $(stringify!($lit) => Ok($name::$lit),)*
+                    $($str => Ok($name::$lit),)*
                     _ => Err($error::new(txt))
                 }
+            }
+        }
+
+        impl std::convert::AsRef<str> for $name {
+            fn as_ref(&self) -> &'static str {
+                 match self {
+                     $($name::$lit => $str,)*
+                 }
             }
         }
 
@@ -45,10 +53,7 @@ macro_rules! string_enum {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 write!(
                     f,
-                    "{}",
-                    match self {
-                        $($name::$lit => stringify!($lit),)*
-                    }
+                    "{}", self.as_ref()
                 )
             }
         }
@@ -59,7 +64,39 @@ string_enum!(
     MetricType,
     UnknownMetricType,
     Counter,
+    "counter",
     Gauge,
+    "gauge",
     Histogram,
-    Summary
+    "histogram",
+    Summary,
+    "summary"
 );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::convert::TryFrom;
+
+    #[test]
+    fn test_as_ref() {
+        assert_eq!("gauge", MetricType::Gauge.as_ref());
+        assert_eq!("counter", MetricType::Counter.as_ref());
+        assert_eq!("gauge", MetricType::Gauge.as_ref());
+        assert_eq!("histogram", MetricType::Histogram.as_ref());
+    }
+
+    #[test]
+    fn test_display() {
+        assert_eq!("gauge", format!("{}", MetricType::Gauge));
+    }
+
+    #[test]
+    fn test_try_from_ok() {
+        assert_eq!(
+            MetricType::Histogram,
+            MetricType::try_from("histogram").unwrap()
+        );
+    }
+
+}

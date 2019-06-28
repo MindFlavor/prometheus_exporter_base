@@ -1,20 +1,23 @@
+use crate::MetricType;
+use num::Num;
+
 pub trait RenderToPrometheus {
     fn render(&self) -> String;
 }
 
-pub struct PrometheusCounter<'a> {
+pub struct PrometheusMetric<'a> {
     pub counter_name: &'a str,
-    pub counter_type: &'a str,
+    pub counter_type: MetricType,
     pub counter_help: &'a str,
 }
 
-impl<'a> PrometheusCounter<'a> {
+impl<'a> PrometheusMetric<'a> {
     pub fn new(
         counter_name: &'a str,
-        counter_type: &'a str,
+        counter_type: MetricType,
         counter_help: &'a str,
-    ) -> PrometheusCounter<'a> {
-        PrometheusCounter {
+    ) -> PrometheusMetric<'a> {
+        PrometheusMetric {
             counter_name,
             counter_type,
             counter_help,
@@ -28,40 +31,41 @@ impl<'a> PrometheusCounter<'a> {
         )
     }
 
-    /// Returns the valid Prometheus string, given the optional attributes and the value.
+    /// Returns the valid Prometheus string, given the optional labels and the value.
     /// The counter name is in `&self`.
     ///
     /// # Arguments
     ///
-    /// * `attributes` - A slice of pairs indicating Attribute-Value. It is optional.
-    /// * `value` - A Display-able value that will be appended as counter value.
+    /// * `labels` - A slice of pairs indicating Label-Value. It is optional.
+    /// * `value` - A number that will be appended as counter value. Remember, all
+    /// values in Prometheus are float but you can pass any num::Num values here.
     ///
     /// # Example
     ///
     /// ```
-    ///  use prometheus_exporter_base::PrometheusCounter;
-    ///  let pc = PrometheusCounter::new("folder_size", "counter", "Size of the folder");
+    ///  use prometheus_exporter_base::{MetricType, PrometheusMetric};
+    ///  let pc = PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
     ///  let mut s = pc.render_header();
 
-    ///  let mut attributes = Vec::new();
-    ///  attributes.push(("folder", "/var/log/"));
-    ///  s.push_str(&pc.render_counter(Some(&attributes), 1024));
+    ///  let mut labels = Vec::new();
+    ///  labels.push(("folder", "/var/log/"));
+    ///  s.push_str(&pc.render_sample(Some(&labels), 1024));
 
-    ///  attributes[0].1 = "/tmp";
-    ///  s.push_str(&pc.render_counter(Some(&attributes), 5_000_000));
+    ///  labels[0].1 = "/tmp";
+    ///  s.push_str(&pc.render_sample(Some(&labels), 5_000_000));
     /// ```
-    pub fn render_counter<N>(&self, attributes: Option<&[(&'a str, &'a str)]>, value: N) -> String
+    pub fn render_sample<N>(&self, labels: Option<&[(&'a str, &'a str)]>, value: N) -> String
     where
-        N: std::fmt::Display,
+        N: Num + std::fmt::Display,
     {
-        if let Some(attributes) = attributes {
-            if attributes.is_empty() {
+        if let Some(labels) = labels {
+            if labels.is_empty() {
                 format!("{} {}\n", self.counter_name, value.to_string())
             } else {
                 let mut s = format!("{}{{", self.counter_name);
 
                 let mut first = true;
-                for (key, val) in attributes.iter() {
+                for (key, val) in labels.iter() {
                     if !first {
                         s.push_str(",");
                     } else {
@@ -83,10 +87,11 @@ impl<'a> PrometheusCounter<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::MetricType;
 
     #[test]
     fn test_header() {
-        let pc = PrometheusCounter::new("pippo_total", "counter", "Number of pippos");
+        let pc = PrometheusMetric::new("pippo_total", MetricType::Counter, "Number of pippos");
 
         assert_eq!(
             pc.render_header(),
@@ -95,22 +100,22 @@ mod tests {
     }
 
     #[test]
-    fn test_attributes() {
-        let pc = PrometheusCounter::new("pippo_total", "counter", "Number of pippos");
+    fn test_labels() {
+        let pc = PrometheusMetric::new("pippo_total", MetricType::Counter, "Number of pippos");
         let mut number = 0;
 
-        let mut attributes = Vec::new();
-        attributes.push(("food", "chicken"));
-        attributes.push(("instance", ""));
+        let mut labels = Vec::new();
+        labels.push(("food", "chicken"));
+        labels.push(("instance", ""));
 
         for _ in 0..4 {
-            let mut attributes = Vec::new();
-            attributes.push(("food", "chicken"));
+            let mut labels = Vec::new();
+            labels.push(("food", "chicken"));
 
             let number_string = number.to_string();
-            attributes.push(("instance", &number_string));
+            labels.push(("instance", &number_string));
 
-            let ret = pc.render_counter(Some(&attributes), &*number.to_string());
+            let ret = pc.render_sample(Some(&labels), number);
 
             assert_eq!(
                 ret,
@@ -124,10 +129,10 @@ mod tests {
     }
 
     #[test]
-    fn test_no_attributes() {
-        let pc = PrometheusCounter::new("gigino_total", "counter", "Number of giginos");
+    fn test_no_labels() {
+        let pc = PrometheusMetric::new("gigino_total", MetricType::Counter, "Number of giginos");
         assert_eq!(
-            pc.render_counter(None, 100),
+            pc.render_sample(None, 100),
             format!("gigino_total {}\n", 100)
         );
     }

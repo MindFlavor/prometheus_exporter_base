@@ -11,7 +11,7 @@ use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::sync::Arc;
 mod render_to_prometheus;
-pub use render_to_prometheus::PrometheusCounter;
+pub use render_to_prometheus::PrometheusMetric;
 mod metric_type;
 pub use metric_type::MetricType;
 
@@ -84,7 +84,7 @@ where
     P: FnOnce(
             Request<Body>,
             &Arc<O>,
-        ) -> Box<Future<Item = String, Error = failure::Error> + Send + 'static>
+        ) -> Box<dyn Future<Item = String, Error = failure::Error> + Send + 'static>
         + Send
         + Clone
         + 'static,
@@ -112,7 +112,7 @@ where
     P: FnOnce(
             Request<Body>,
             &Arc<O>,
-        ) -> Box<Future<Item = String, Error = failure::Error> + Send + 'static>
+        ) -> Box<dyn Future<Item = String, Error = failure::Error> + Send + 'static>
         + Send
         + Clone
         + 'static,
