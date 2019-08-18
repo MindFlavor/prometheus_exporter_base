@@ -1,8 +1,8 @@
-use futures::future::{done, ok, Future};
+#![feature(async_await)]
 use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
 use std::fs::read_dir;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct MyOptions {}
 
 fn calculate_file_size(path: &str) -> Result<u64, std::io::Error> {
@@ -21,25 +21,24 @@ fn main() {
     let addr = ([0, 0, 0, 0], 32221).into();
     println!("starting exporter on {}", addr);
 
-    render_prometheus(&addr, MyOptions {}, |request, options| {
-        Box::new({
+    render_prometheus(addr, MyOptions::default(), |request, options| {
+        async move {
             println!(
                 "in our render_prometheus(request == {:?}, options == {:?})",
                 request, options
             );
 
-            let future_log = done(calculate_file_size("/var/log")).from_err();
-            future_log.and_then(|total_size_log| {
-                let pc =
-                    PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
-                let mut s = pc.render_header();
+            let total_size_log = calculate_file_size("/var/log").unwrap();
 
-                let mut attributes = Vec::new();
-                attributes.push(("folder", "/var/log/"));
-                s.push_str(&pc.render_sample(Some(&attributes), total_size_log));
+            let pc =
+                PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
+            let mut s = pc.render_header();
 
-                ok(s)
-            })
-        })
+            let mut attributes = Vec::new();
+            attributes.push(("folder", "/var/log/"));
+            s.push_str(&pc.render_sample(Some(&attributes), total_size_log));
+
+            Ok(s)
+        }
     });
 }

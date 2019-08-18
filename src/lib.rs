@@ -98,10 +98,10 @@ where
     }
 }
 
-async fn run_server<O, F, Fut>(addr: SocketAddr, f: F, options: Arc<O>) -> Result<(), hyper::Error>
+async fn run_server<O, F, Fut>(addr: SocketAddr, options: Arc<O>, f: F) -> Result<(), hyper::Error>
 where
-    F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Sync + Clone + 'static,
-    Fut: Future<Output = Result<String, failure::Error>> + Send + Sync + 'static,
+    F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + 'static,
+    Fut: Future<Output = Result<String, failure::Error>> + Send + 'static,
     O: std::fmt::Debug + Sync + Send + 'static,
 {
     info!("Listening on http://{}", addr);
@@ -120,15 +120,15 @@ where
     serve_future.compat().await
 }
 
-pub fn render_prometheus<O, F, Fut>(addr: SocketAddr, f: F, options: O)
+pub fn render_prometheus<O, F, Fut>(addr: SocketAddr, options: O, f: F)
 where
-    F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Sync + Clone + 'static,
-    Fut: Future<Output = Result<String, failure::Error>> + Send + Sync + 'static,
+    F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + 'static,
+    Fut: Future<Output = Result<String, failure::Error>> + Send + 'static,
     O: std::fmt::Debug + Sync + Send + 'static,
 {
     let o = Arc::new(options);
 
-    let futures_03_future = run_server(addr, f, o);
+    let futures_03_future = run_server(addr, o, f);
     let futures_01_future = futures_03_future
         .map_err(|err| {
             error!("{:?}", err);
