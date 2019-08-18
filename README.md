@@ -6,9 +6,9 @@
 
 [![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
 
-[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.4.0)
-[![tag](https://img.shields.io/github/tag/mindflavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.4.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.4.0.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.4.0.svg)
+[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.5.0)
+[![tag](https://img.shields.io/github/tag/mindflavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.5.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.5.0.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.5.0.svg)
 
 ## Goal
 
@@ -27,11 +27,10 @@ To use the crate all you have to do is call the `render_prometheus` function. Th
 For example: 
 
 ```rust
-render_prometheus(&addr, MyOptions {}, |request, options| {
-    Box::new({
-	// your code, returning a Future<Item=String, Error=failure::Error>
-        ok("it works!".to_owned())
-    })
+render_prometheus(addr, MyOptions::default(), |request, options| {
+    async {
+    	Ok("it works!".to_owned())
+    }
 });
 ```
 
