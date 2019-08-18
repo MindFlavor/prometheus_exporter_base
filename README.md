@@ -2,6 +2,10 @@
 
 ### Base library for Rust Prometheus exporters
 
+master | dev | 
+-- | -- |
+[![Build Status](https://travis-ci.org/MindFlavor/prometheus_exporter_base.svg?branch=master)](https://travis-ci.org/MindFlavor/prometheus_exporter_base) | [![Build Status](https://travis-ci.org/MindFlavor/prometheus_exporter_base.svg?branch=dev)](https://travis-ci.org/MindFlavor/prometheus_exporter_base)
+
 [![legal](https://img.shields.io/github/license/mindflavor/prometheus_exporter_base.svg)](LICENSE)
 
 [![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
