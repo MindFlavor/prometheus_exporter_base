@@ -1,11 +1,11 @@
+#![feature(async_await)]
 use clap::{crate_authors, crate_name, crate_version, Arg};
-use futures::future::{done, ok, Future};
 use log::{info, trace};
 use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
 use std::env;
 use std::fs::read_dir;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct MyOptions {}
 
 fn calculate_file_size(path: &str) -> Result<u64, std::io::Error> {
@@ -60,8 +60,8 @@ fn main() {
 
     info!("starting exporter on {}", addr);
 
-    render_prometheus(&addr, MyOptions {}, |request, options| {
-        Box::new({
+    render_prometheus(addr, MyOptions::default(), |request, options| {
+        async move {
             trace!(
                 "in our render_prometheus(request == {:?}, options == {:?})",
                 request,
@@ -69,26 +69,20 @@ fn main() {
             );
 
             // let's calculate the size of /var/log files and /tmp files as an example
-            // notice we are using combinators, as soon as async lands this code will be
-            // much easier to follow
-            let future_log = done(calculate_file_size("/var/log")).from_err();
-            let future_tmp = done(calculate_file_size("/tmp")).from_err();
-            let joined_future = future_tmp.join(future_log);
+            let total_size_log = calculate_file_size("/var/log")?;
+            let total_size_tmp = calculate_file_size("/tmp")?;
+            let pc =
+                PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
+            let mut s = pc.render_header();
 
-            joined_future.and_then(|(total_size_log, total_size_tmp)| {
-                let pc =
-                    PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
-                let mut s = pc.render_header();
+            let mut attributes = Vec::new();
+            attributes.push(("folder", "/var/log/"));
+            s.push_str(&pc.render_sample(Some(&attributes), total_size_log));
 
-                let mut attributes = Vec::new();
-                attributes.push(("folder", "/var/log/"));
-                s.push_str(&pc.render_sample(Some(&attributes), total_size_log));
+            attributes[0].1 = "/tmp";
+            s.push_str(&pc.render_sample(Some(&attributes), total_size_tmp));
 
-                attributes[0].1 = "/tmp";
-                s.push_str(&pc.render_sample(Some(&attributes), total_size_tmp));
-
-                ok(s)
-            })
-        })
+            Ok(s)
+        }
     });
 }
