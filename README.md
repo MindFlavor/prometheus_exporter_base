@@ -2,12 +2,13 @@
 
 ### Base library for Rust Prometheus exporters
 
+master | dev | 
+-- | -- |
+[![Build Status](https://travis-ci.org/MindFlavor/prometheus_exporter_base.svg?branch=master)](https://travis-ci.org/MindFlavor/prometheus_exporter_base) | [![Build Status](https://travis-ci.org/MindFlavor/prometheus_exporter_base.svg?branch=dev)](https://travis-ci.org/MindFlavor/prometheus_exporter_base)
+
 [![legal](https://img.shields.io/github/license/mindflavor/prometheus_exporter_base.svg)](LICENSE)
 
 [![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
-
-[![Travis master](https://travis-ci.org/MindFlavor/prometheus_exporter_base.svg?branch=master)]
-[![Travis dev](https://travis-ci.org/MindFlavor/prometheus_exporter_base.svg?branch=dev)]
 
 [![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.5.0)
 [![tag](https://img.shields.io/github/tag/mindflavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.5.0)
