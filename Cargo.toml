@@ -17,7 +17,7 @@ categories     = ["database"]
 [dependencies]
 log            = "0.4.8"
 env_logger     = "0.6.2"
-futures-preview = { version = " = 0.3.0-alpha.18", features = ["compat"] }
+futures-preview = { version = "0.3.0-alpha.19", features = ["compat"] }
 clap           = "2.33.0"
 serde          = "1.0.99"
 serde_json     = "1.0.40"
@@ -25,4 +25,4 @@ failure        = "0.1.5"
 hyper          = "0.12.33"
 http           = "0.1.18"
 hyper-rustls   = "0.17.0"
-num	       = "0.2.0"
+num            = "0.2.0"
