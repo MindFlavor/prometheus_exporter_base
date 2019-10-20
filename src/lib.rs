@@ -1,11 +1,7 @@
-#![feature(async_await)]
-extern crate failure;
-extern crate serde_json;
-use futures::compat::Future01CompatExt;
 use futures::future::Future;
-use futures::future::{FutureExt, TryFutureExt};
+use futures::future::FutureExt;
 use http::StatusCode;
-use hyper::service::service_fn;
+use hyper::service::{make_service_fn, service_fn};
 use hyper::Client;
 use hyper::{Body, Request, Response, Server};
 use log::{debug, error, info, trace, warn};
@@ -19,14 +15,12 @@ use std::net::SocketAddr;
 
 #[inline]
 async fn extract_body(req: hyper::client::ResponseFuture) -> Result<String, failure::Error> {
-    use futures::compat::Stream01CompatExt;
-    use futures::TryStreamExt;
+    use futures_util::TryStreamExt;
 
-    let resp = req.compat().await?;
+    let resp = req.await?;
     debug!("response == {:?}", resp);
 
-    let (_parts, body) = resp.into_parts();
-    let complete_body = body.compat().try_concat().await?;
+    let complete_body = resp.into_body().try_concat().await?;
 
     let s = String::from_utf8(complete_body.to_vec())?;
     trace!("extracted text == {}", s);
@@ -37,7 +31,7 @@ async fn extract_body(req: hyper::client::ResponseFuture) -> Result<String, fail
 pub async fn create_string_future_from_hyper_request(
     request: hyper::Request<hyper::Body>,
 ) -> Result<String, failure::Error> {
-    let https = hyper_rustls::HttpsConnector::new(4);
+    let https = hyper_tls::HttpsConnector::new()?;
     let client = Client::builder().build::<_, hyper::Body>(https);
 
     Ok(extract_body(client.request(request)).await?)
@@ -106,21 +100,24 @@ where
 {
     info!("Listening on http://{}", addr);
 
-    let serve_future = Server::bind(&addr).serve(move || {
+    let serve_future = Server::bind(&addr).serve(make_service_fn(move |_| {
         let f = f.clone();
-        let options = options.clone();
+        let options = Arc::clone(&options);
+        async {
+            Ok::<_, hyper::Error>(service_fn(move |req| {
+                serve_function(req, f.clone(), options.clone()).boxed()
+            }))
+        }
+    }));
 
-        service_fn(move |req| {
-            serve_function(req, f.clone(), options.clone())
-                .boxed()
-                .compat()
-        })
-    });
-
-    serve_future.compat().await
+    serve_future.await
 }
 
-pub fn render_prometheus<O, F, Fut>(addr: SocketAddr, options: O, f: F)
+pub async fn render_prometheus<O, F, Fut>(
+    addr: SocketAddr,
+    options: O,
+    f: F,
+) -> Result<(), hyper::Error>
 where
     F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + 'static,
     Fut: Future<Output = Result<String, failure::Error>> + Send + 'static,
@@ -128,16 +125,5 @@ where
 {
     let o = Arc::new(options);
 
-    let futures_03_future = run_server(addr, o, f);
-    let futures_01_future = futures_03_future
-        .map_err(|err| {
-            error!("{:?}", err);
-            eprintln!("Server failure: {:?}", err)
-        })
-        .boxed()
-        .compat();
-
-    // Finally, we can run the future to completion using the `run` function
-    // provided by Hyper.
-    hyper::rt::run(futures_01_future);
+    run_server(addr, o, f).await
 }

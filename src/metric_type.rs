@@ -17,7 +17,7 @@ macro_rules! string_enum {
         }
 
         impl std::fmt::Display for $error {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(
                     f,
                     "enum $name does not have the {} variant", self.passed_name
@@ -50,7 +50,7 @@ macro_rules! string_enum {
         }
 
         impl std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(
                     f,
                     "{}", self.as_ref()
@@ -98,5 +98,4 @@ mod tests {
             MetricType::try_from("histogram").unwrap()
         );
     }
-
 }
