@@ -63,10 +63,10 @@ where
 {
     trace!(
         "serve_function:: req.uri() == {}, req.method() == {}",
-        req.uri(),
+        req.uri().path(),
         req.method()
     );
-    if req.uri() != "/metrics" {
+    if req.uri().path() != "/metrics" {
         Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(hyper::Body::empty())
