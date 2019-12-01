@@ -17,12 +17,13 @@ categories     = ["database"]
 [dependencies]
 log            = "0.4.8"
 env_logger     = "0.6.2"
-futures-preview = { version = " = 0.3.0-alpha.18", features = ["compat"] }
+futures-util-preview     = "0.3.0-alpha.19"
+futures-preview = { version = " = 0.3.0-alpha.19", features = ["compat"] }
 clap           = "2.33.0"
 serde          = "1.0.99"
 serde_json     = "1.0.40"
 failure        = "0.1.5"
-hyper          = "0.12.33"
+hyper                    = { version        = "0.13.0-alpha.4" , features  = ["unstable-stream"] }
+hyper-rustls             = { version        = "0.19.0-alpha.3" , features  = [] }
 http           = "0.1.18"
-hyper-rustls   = "0.17.0"
 num	       = "0.2.0"

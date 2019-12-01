@@ -1,32 +1,29 @@
-#![feature(async_await)]
+#![feature(async_closure)]
 extern crate failure;
 extern crate serde_json;
-use futures::compat::Future01CompatExt;
 use futures::future::Future;
 use futures::future::{FutureExt, TryFutureExt};
 use http::StatusCode;
-use hyper::service::service_fn;
+use hyper::service::{make_service_fn, service_fn};
 use hyper::Client;
 use hyper::{Body, Request, Response, Server};
 use log::{debug, error, info, trace, warn};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 mod render_to_prometheus;
+use futures_util::try_stream::TryStreamExt;
 pub use render_to_prometheus::PrometheusMetric;
 mod metric_type;
 pub use metric_type::MetricType;
 use std::net::SocketAddr;
 
 #[inline]
-async fn extract_body(req: hyper::client::ResponseFuture) -> Result<String, failure::Error> {
-    use futures::compat::Stream01CompatExt;
-    use futures::TryStreamExt;
-
-    let resp = req.compat().await?;
+async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, failure::Error> {
+    let resp = resp.await?;
     debug!("response == {:?}", resp);
 
     let (_parts, body) = resp.into_parts();
-    let complete_body = body.compat().try_concat().await?;
+    let complete_body = body.try_concat().await?;
 
     let s = String::from_utf8(complete_body.to_vec())?;
     trace!("extracted text == {}", s);
@@ -37,7 +34,7 @@ async fn extract_body(req: hyper::client::ResponseFuture) -> Result<String, fail
 pub async fn create_string_future_from_hyper_request(
     request: hyper::Request<hyper::Body>,
 ) -> Result<String, failure::Error> {
-    let https = hyper_rustls::HttpsConnector::new(4);
+    let https = hyper_rustls::HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
 
     Ok(extract_body(client.request(request)).await?)
@@ -106,38 +103,44 @@ where
 {
     info!("Listening on http://{}", addr);
 
-    let serve_future = Server::bind(&addr).serve(move || {
-        let f = f.clone();
-        let options = options.clone();
-
-        service_fn(move |req| {
-            serve_function(req, f.clone(), options.clone())
-                .boxed()
-                .compat()
-        })
+    let make_service = make_service_fn(|_| {
+        async {
+            Ok::<_, hyper::Error>(service_fn(|_req| {
+                async { Ok::<_, hyper::Error>(Response::new(Body::from("Hello World"))) }
+            }))
+        }
     });
 
-    serve_future.compat().await
+    let serve_future = Server::bind(&addr).serve(make_service);
+
+    //let serve_future = Server::bind(&addr).serve(async move || {
+    //    let f = f.clone();
+    //    let options = options.clone();
+
+    //    service_fn(move |req| serve_function(req, f.clone(), options.clone()).boxed())
+    //});
+
+    serve_future.await
 }
 
-pub fn render_prometheus<O, F, Fut>(addr: SocketAddr, options: O, f: F)
-where
-    F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + 'static,
-    Fut: Future<Output = Result<String, failure::Error>> + Send + 'static,
-    O: std::fmt::Debug + Sync + Send + 'static,
-{
-    let o = Arc::new(options);
-
-    let futures_03_future = run_server(addr, o, f);
-    let futures_01_future = futures_03_future
-        .map_err(|err| {
-            error!("{:?}", err);
-            eprintln!("Server failure: {:?}", err)
-        })
-        .boxed()
-        .compat();
-
-    // Finally, we can run the future to completion using the `run` function
-    // provided by Hyper.
-    hyper::rt::run(futures_01_future);
-}
+//pub fn render_prometheus<O, F, Fut>(addr: SocketAddr, options: O, f: F)
+//where
+//    F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + 'static,
+//    Fut: Future<Output = Result<String, failure::Error>> + Send + 'static,
+//    O: std::fmt::Debug + Sync + Send + 'static,
+//{
+//    let o = Arc::new(options);
+//
+//    let futures_03_future = run_server(addr, o, f);
+//    //let futures_01_future = futures_03_future
+//    //    .map_err(|err| {
+//    //        error!("{:?}", err);
+//    //        eprintln!("Server failure: {:?}", err)
+//    //    })
+//    //    .boxed()
+//    //    .compat();
+//
+//    // Finally, we can run the future to completion using the `run` function
+//    // provided by Hyper.
+//    hyper::rt::run(futures_03_future);
+//}
