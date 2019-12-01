@@ -1,7 +1,6 @@
 #![feature(async_closure)]
 extern crate failure;
 extern crate serde_json;
-use futures::future::Future;
 use http::StatusCode;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::Client;
@@ -14,6 +13,7 @@ use futures_util::try_stream::TryStreamExt;
 pub use render_to_prometheus::PrometheusMetric;
 mod metric_type;
 pub use metric_type::MetricType;
+use std::future::Future;
 use std::net::SocketAddr;
 
 #[inline]

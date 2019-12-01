@@ -1,4 +1,3 @@
-#![feature(async_await)]
 use clap::{crate_authors, crate_name, crate_version, Arg};
 use log::{info, trace};
 use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
@@ -20,7 +19,8 @@ fn calculate_file_size(path: &str) -> Result<u64, std::io::Error> {
     Ok(total_size)
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let matches = clap::App::new(crate_name!())
         .version(crate_version!())
         .author(crate_authors!("\n"))
@@ -84,5 +84,6 @@ fn main() {
 
             Ok(s)
         }
-    });
+    })
+    .await;
 }
