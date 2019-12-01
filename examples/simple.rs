@@ -1,4 +1,3 @@
-#![feature(async_await)]
 use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
 use std::fs::read_dir;
 
@@ -17,7 +16,8 @@ fn calculate_file_size(path: &str) -> Result<u64, std::io::Error> {
     Ok(total_size)
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let addr = ([0, 0, 0, 0], 32221).into();
     println!("starting exporter on {}", addr);
 
@@ -40,5 +40,6 @@ fn main() {
 
             Ok(s)
         }
-    });
+    })
+    .await;
 }
