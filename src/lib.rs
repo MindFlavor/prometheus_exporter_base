@@ -1,4 +1,3 @@
-#![feature(async_closure)]
 extern crate failure;
 extern crate serde_json;
 use http::StatusCode;
