@@ -10,9 +10,9 @@ master | dev |
 
 [![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
 
-[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.30.2)
-[![tag](https://img.shields.io/github/tag/mindflavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.30.2)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.30.2.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.30.2.svg)
+[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.30.3)
+[![tag](https://img.shields.io/github/tag/mindflavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.30.3)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.30.3.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.30.3.svg)
 
 ## Goal
 

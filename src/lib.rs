@@ -3,12 +3,11 @@ extern crate serde_json;
 use http::StatusCode;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::Client;
-use hyper::{Body, Request, Response, Server};
+use hyper::{body, Body, Request, Response, Server};
 use log::{debug, error, info, trace, warn};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 mod render_to_prometheus;
-use futures_util::try_stream::TryStreamExt;
 pub use render_to_prometheus::PrometheusMetric;
 mod metric_type;
 pub use metric_type::MetricType;
@@ -21,7 +20,7 @@ async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, fai
     debug!("response == {:?}", resp);
 
     let (_parts, body) = resp.into_parts();
-    let complete_body = body.try_concat().await?;
+    let complete_body = body::to_bytes(body).await?;
 
     let s = String::from_utf8(complete_body.to_vec())?;
     trace!("extracted text == {}", s);
