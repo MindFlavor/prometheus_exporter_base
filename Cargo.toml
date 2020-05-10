@@ -1,6 +1,6 @@
 [package]
 name           = "prometheus_exporter_base"
-version        = "0.30.3"
+version        = "0.30.4"
 authors        = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 edition        = "2018"
 description    = "Prometheus Rust exporters base crate with boilerplate"
@@ -18,12 +18,12 @@ categories     = ["database"]
 log                  = "0.4.8"
 env_logger           = "0.7.1"
 clap                 = "2.33.0"
-serde                = "1.0.104"
-serde_json           = "1.0.48"
-failure              = "0.1.6"
-hyper                = "0.13"
-hyper-rustls         = "0.19"
-http                 = "0.2.0"
+serde                = "1.0.110"
+serde_json           = "1.0.53"
+failure              = "0.1.8"
+hyper                = "0.13.5"
+hyper-rustls         = "0.20.0"
+http                 = "0.2.1"
 num                  = "0.2.1"
 
 [dev-dependencies]
