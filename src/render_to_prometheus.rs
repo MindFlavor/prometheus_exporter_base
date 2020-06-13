@@ -39,6 +39,7 @@ impl<'a> PrometheusMetric<'a> {
     /// * `labels` - A slice of pairs indicating Label-Value. It is optional.
     /// * `value` - A number that will be appended as counter value. Remember, all
     /// values in Prometheus are float but you can pass any num::Num values here.
+    /// * `timestamp` - An int64 number representing milliseconds since epoch, i.e. 1970-01-01 00:00:00 UTC, excluding leap seconds.
     ///
     /// # Example
     ///
@@ -49,21 +50,26 @@ impl<'a> PrometheusMetric<'a> {
 
     ///  let mut labels = Vec::new();
     ///  labels.push(("folder", "/var/log/"));
-    ///  s.push_str(&pc.render_sample(Some(&labels), 1024));
+    ///  s.push_str(&pc.render_sample(Some(&labels), 1024, None));
 
     ///  labels[0].1 = "/tmp";
-    ///  s.push_str(&pc.render_sample(Some(&labels), 5_000_000));
+    ///  s.push_str(&pc.render_sample(Some(&labels), 5_000_000, Some(1592070947954)));
     /// ```
-    pub fn render_sample<N>(&self, labels: Option<&[(&'a str, &'a str)]>, value: N) -> String
+    pub fn render_sample<N>(
+        &self,
+        labels: Option<&[(&'a str, &'a str)]>,
+        value: N,
+        timestamp: Option<i64>,
+    ) -> String
     where
         N: Num + std::fmt::Display,
     {
+        let mut s = format!("{}", self.counter_name);
         if let Some(labels) = labels {
             if labels.is_empty() {
-                format!("{} {}\n", self.counter_name, value.to_string())
+                s.push_str(&format!(" {}", value.to_string()));
             } else {
-                let mut s = format!("{}{{", self.counter_name);
-
+                s.push_str("{");
                 let mut first = true;
                 for (key, val) in labels.iter() {
                     if !first {
@@ -75,12 +81,18 @@ impl<'a> PrometheusMetric<'a> {
                     s.push_str(&format!("{}=\"{}\"", key, val));
                 }
 
-                s.push_str(&format!("}} {}\n", value.to_string()));
-                s
+                s.push_str(&format!("}} {}", value.to_string()));
             }
         } else {
-            format!("{} {}\n", self.counter_name, value.to_string())
+            s.push_str(" ");
+            s.push_str(&value.to_string());
         }
+        if let Some(timestamp) = timestamp {
+            s.push_str(" ");
+            s.push_str(&timestamp.to_string());
+        }
+        s.push_str("\n");
+        s
     }
 }
 
@@ -115,7 +127,7 @@ mod tests {
             let number_string = number.to_string();
             labels.push(("instance", &number_string));
 
-            let ret = pc.render_sample(Some(&labels), number);
+            let ret = pc.render_sample(Some(&labels), number, None);
 
             assert_eq!(
                 ret,
@@ -132,8 +144,12 @@ mod tests {
     fn test_no_labels() {
         let pc = PrometheusMetric::new("gigino_total", MetricType::Counter, "Number of giginos");
         assert_eq!(
-            pc.render_sample(None, 100),
+            pc.render_sample(None, 100, None),
             format!("gigino_total {}\n", 100)
+        );
+        assert_eq!(
+            pc.render_sample(None, 100, Some(9223372036854775807)),
+            format!("gigino_total 100 9223372036854775807\n")
         );
     }
 }
