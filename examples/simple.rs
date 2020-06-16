@@ -21,25 +21,22 @@ async fn main() {
     let addr = ([0, 0, 0, 0], 32221).into();
     println!("starting exporter on {}", addr);
 
-    render_prometheus(addr, MyOptions::default(), |request, options| {
-        async move {
-            println!(
-                "in our render_prometheus(request == {:?}, options == {:?})",
-                request, options
-            );
+    render_prometheus(addr, MyOptions::default(), |request, options| async move {
+        println!(
+            "in our render_prometheus(request == {:?}, options == {:?})",
+            request, options
+        );
 
-            let total_size_log = calculate_file_size("/var/log").unwrap();
+        let total_size_log = calculate_file_size("/var/log").unwrap();
 
-            let pc =
-                PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
-            let mut s = pc.render_header();
+        let pc = PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
+        let mut s = pc.render_header();
 
-            let mut attributes = Vec::new();
-            attributes.push(("folder", "/var/log/"));
-            s.push_str(&pc.render_sample(Some(&attributes), total_size_log));
+        let mut attributes = Vec::new();
+        attributes.push(("folder", "/var/log/"));
+        s.push_str(&pc.render_sample(Some(&attributes), total_size_log, None));
 
-            Ok(s)
-        }
+        Ok(s)
     })
     .await;
 }

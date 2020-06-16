@@ -77,10 +77,10 @@ async fn main() {
 
             let mut attributes = Vec::new();
             attributes.push(("folder", "/var/log/"));
-            s.push_str(&pc.render_sample(Some(&attributes), total_size_log));
+            s.push_str(&pc.render_sample(Some(&attributes), total_size_log, None));
 
             attributes[0].1 = "/tmp";
-            s.push_str(&pc.render_sample(Some(&attributes), total_size_tmp));
+            s.push_str(&pc.render_sample(Some(&attributes), total_size_tmp, None));
 
             Ok(s)
         }
