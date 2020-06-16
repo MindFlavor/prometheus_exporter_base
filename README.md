@@ -10,9 +10,9 @@ master | dev |
 
 [![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
 
-[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.30.3)
-[![tag](https://img.shields.io/github/tag/mindflavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.30.3)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.30.3.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.30.3.svg)
+[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.31.0)
+[![tag](https://img.shields.io/github/tag/mindflavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.31.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.31.0.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.31.0.svg)
 
 ## Goal
 
@@ -45,20 +45,21 @@ As you can see, the crate does not enforce anything to the output, it's up to yo
 The `PrometheusMetric` struct is used by instantiating it and then "rendering" the header and values - optionally specifying labels. This is an example taken from the documentation: 
 
 ```rust
-use prometheus_exporter_base::{MetricType, PrometheusMetric};
 // create a counter type metric
 let pc = PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
 // render the metric header to a string
 let mut s = pc.render_header();
+
 // add a label
-let mut labels = Vec::new();
-labels.push(("folder", "/var/log/"));
+let mut attributes = Vec::new();
+attributes.push(("folder", "/var/log/"));
 // render the sample /var/log with its value
-s.push_str(&pc.render_sample(Some(&labels), 1024));
+s.push_str(&pc.render_sample(Some(&attributes), total_size_log, None));
+
 // change the label value to /tmp 
-labels[0].1 = "/tmp";
+attributes[0].1 = "/tmp";
 // render the sample /tmp with its value
-s.push_str(&pc.render_sample(Some(&labels), 5_000_000));
+s.push_str(&pc.render_sample(Some(&attributes), total_size_tmp, None));
 ```
 
 This will give something like this: 
