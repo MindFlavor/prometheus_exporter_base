@@ -1,0 +1,34 @@
+{
+	"name": "PrometheusMetricBuilder",
+	"derive": "Debug, Clone",
+	"uses": [
+		"std::marker::PhantomData",
+		"crate::{PrometheusMetric, MetricType}"
+	],
+	"inline": true,
+	"prepend_required_types": true,
+	"extra_types": [ "'a" ],
+	"extra_wheres": [ ],
+	"constructor_fields": [ ],
+	"fields": [
+		{
+			"name": "name",
+			"field_type": "&'a str",
+			"builder_type": "NameSet",
+			"optional": false
+		},
+		{
+			"name": "metric_type",
+			"field_type": "MetricType",
+			"builder_type": "MetricTypeSet",
+			"optional": false,
+			"initializer": "MetricType::Gauge"
+		},
+		{
+			"name": "help",
+			"field_type": "&'a str",
+			"builder_type": "HelpSet",
+			"optional": false
+		}	
+	]
+}

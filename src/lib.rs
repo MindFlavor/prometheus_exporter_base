@@ -13,6 +13,7 @@ mod metric_type;
 pub use metric_type::MetricType;
 use std::future::Future;
 use std::net::SocketAddr;
+mod prometheus_metric_builder;
 
 #[inline]
 async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, failure::Error> {

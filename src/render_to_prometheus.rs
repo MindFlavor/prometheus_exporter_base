@@ -1,3 +1,4 @@
+use crate::prometheus_metric_builder::{No, PrometheusMetricBuilder};
 use crate::MetricType;
 use num::Num;
 
@@ -22,6 +23,10 @@ impl<'a> PrometheusMetric<'a> {
             counter_type,
             counter_help,
         }
+    }
+
+    pub fn build() -> PrometheusMetricBuilder<'a, No, No, No> {
+        PrometheusMetricBuilder::new()
     }
 
     pub fn render_header(&self) -> String {

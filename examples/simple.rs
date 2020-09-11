@@ -29,7 +29,11 @@ async fn main() {
 
         let total_size_log = calculate_file_size("/var/log").unwrap();
 
-        let pc = PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
+        let pc = PrometheusMetric::build()
+            .with_name("folder_size")
+            .with_metric_type(MetricType::Counter)
+            .with_help("Size of the folder")
+            .build();
         let mut s = pc.render_header();
 
         let mut attributes = Vec::new();
