@@ -35,16 +35,11 @@ async fn main() {
             .with_help("Size of the folder")
             .build();
 
-        let mut s = pc.render_header();
-
-        s.push_str(
-            &pc.create_instance()
-                .with_label("folder", "/var/log")
-                .with_value(total_size_log)
-                .render(),
-        );
-
-        Ok(s)
+        Ok(pc
+            .create_instance()
+            .with_label("folder", "/var/log")
+            .with_value(total_size_log)
+            .render_with_header())
     })
     .await;
 }

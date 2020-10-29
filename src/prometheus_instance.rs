@@ -86,6 +86,10 @@ impl<'a, N> PrometheusInstance<'a, N, Yes>
 where
     N: Num + std::fmt::Display,
 {
+    pub fn render_with_header(&self) -> String {
+        format!("{}\n{}", self.metric.render_header(), self.render())
+    }
+
     pub fn render(&self) -> String {
         // this is safe because of the type
         let value = self.value.as_ref().unwrap();

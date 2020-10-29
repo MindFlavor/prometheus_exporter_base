@@ -74,10 +74,6 @@ mod tests {
         let pc = PrometheusMetric::new("pippo_total", MetricType::Counter, "Number of pippos");
         let mut number = 0;
 
-        let mut labels = Vec::new();
-        labels.push(("food", "chicken"));
-        labels.push(("instance", ""));
-
         for _ in 0..4 {
             let ret = pc
                 .create_instance()
