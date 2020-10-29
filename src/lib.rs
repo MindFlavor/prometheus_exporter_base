@@ -10,10 +10,20 @@ use std::sync::Arc;
 mod render_to_prometheus;
 pub use render_to_prometheus::PrometheusMetric;
 mod metric_type;
+mod prometheus_instance;
 pub use metric_type::MetricType;
+pub use prometheus_instance::{MissingValue, PrometheusInstance};
 use std::future::Future;
 use std::net::SocketAddr;
 mod prometheus_metric_builder;
+
+pub trait ToAssign {}
+#[derive(Debug, Clone, Copy)]
+pub struct Yes {}
+#[derive(Debug, Clone, Copy)]
+pub struct No {}
+impl ToAssign for Yes {}
+impl ToAssign for No {}
 
 #[inline]
 async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, failure::Error> {

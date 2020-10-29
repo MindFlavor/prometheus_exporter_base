@@ -1,13 +1,6 @@
-use crate::{MetricType, PrometheusMetric};
+use crate::{MetricType, No, PrometheusMetric, ToAssign, Yes};
 use std::marker::PhantomData;
 
-pub trait ToAssign {}
-#[derive(Debug, Clone, Copy)]
-pub struct Yes {}
-#[derive(Debug, Clone, Copy)]
-pub struct No {}
-impl ToAssign for Yes {}
-impl ToAssign for No {}
 #[derive(Debug, Clone)]
 pub struct PrometheusMetricBuilder<'a, NameSet, MetricTypeSet, HelpSet>
 where

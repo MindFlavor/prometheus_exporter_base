@@ -1,4 +1,6 @@
-use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
+use prometheus_exporter_base::{
+    render_prometheus, MetricType, PrometheusInstance, PrometheusMetric,
+};
 use std::fs::read_dir;
 
 #[derive(Debug, Clone, Default)]
@@ -35,6 +37,11 @@ async fn main() {
             .with_help("Size of the folder")
             .build();
         let mut s = pc.render_header();
+
+        let mut instance = pc.create_instance();
+        instance
+            .with_label("folder", "/var/log")
+            .with_value(total_size_log);
 
         let mut attributes = Vec::new();
         attributes.push(("folder", "/var/log/"));

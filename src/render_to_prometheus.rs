@@ -1,11 +1,12 @@
-use crate::prometheus_metric_builder::{No, PrometheusMetricBuilder};
-use crate::MetricType;
+use crate::prometheus_metric_builder::PrometheusMetricBuilder;
+use crate::{MetricType, MissingValue, No, PrometheusInstance};
 use num::Num;
 
 pub trait RenderToPrometheus {
     fn render(&self) -> String;
 }
 
+#[derive(Debug, Clone)]
 pub struct PrometheusMetric<'a> {
     pub counter_name: &'a str,
     pub counter_type: MetricType,
@@ -23,6 +24,13 @@ impl<'a> PrometheusMetric<'a> {
             counter_type,
             counter_help,
         }
+    }
+
+    pub fn create_instance<N>(&'a self) -> PrometheusInstance<'a, N, MissingValue>
+    where
+        N: Num + std::fmt::Display,
+    {
+        self.into()
     }
 
     pub fn build() -> PrometheusMetricBuilder<'a, No, No, No> {
@@ -98,6 +106,15 @@ impl<'a> PrometheusMetric<'a> {
         }
         s.push_str("\n");
         s
+    }
+}
+
+impl<'a, N> Into<PrometheusInstance<'a, N, MissingValue>> for &'a PrometheusMetric<'a>
+where
+    N: Num + std::fmt::Display,
+{
+    fn into(self) -> PrometheusInstance<'a, N, MissingValue> {
+        PrometheusInstance::new(self)
     }
 }
 
