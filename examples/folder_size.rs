@@ -75,12 +75,19 @@ async fn main() {
                 PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
             let mut s = pc.render_header();
 
-            let mut attributes = Vec::new();
-            attributes.push(("folder", "/var/log/"));
-            s.push_str(&pc.render_sample(Some(&attributes), total_size_log, None));
+            s.push_str(
+                &pc.create_instance()
+                    .with_label("folder", "/var/log/")
+                    .with_value(total_size_log)
+                    .render(),
+            );
 
-            attributes[0].1 = "/tmp";
-            s.push_str(&pc.render_sample(Some(&attributes), total_size_tmp, None));
+            s.push_str(
+                &pc.create_instance()
+                    .with_label("folder", "/tmp")
+                    .with_value(total_size_tmp)
+                    .render(),
+            );
 
             Ok(s)
         }

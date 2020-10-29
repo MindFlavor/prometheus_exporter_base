@@ -38,28 +38,40 @@ impl<'a, N, ValueSet> PrometheusInstance<'a, N, ValueSet>
 where
     N: Num + std::fmt::Display,
 {
-    pub fn with_label<L, V>(&mut self, l: L, v: V) -> &mut Self
+    pub fn with_label<L, V>(self, l: L, v: V) -> Self
     where
         L: Into<&'a str>,
         V: Into<&'a str>,
     {
-        if let Some(labels) = &mut self.labels {
+        let labels = if let Some(mut labels) = self.labels {
             labels.push((l.into(), v.into()));
+            Some(labels)
         } else {
             let mut labels = Vec::new();
             labels.push((l.into(), v.into()));
-            self.labels = Some(labels);
+            Some(labels)
+        };
+
+        PrometheusInstance {
+            metric: self.metric,
+            labels,
+            value: self.value,
+            timestamp: self.timestamp,
+            value_set: PhantomData {},
         }
-
-        self
     }
 
-    pub fn with_timestamp(&mut self, timestamp: i64) -> &mut Self {
-        self.timestamp = Some(timestamp);
-        self
+    pub fn with_timestamp(self, timestamp: i64) -> Self {
+        PrometheusInstance {
+            metric: self.metric,
+            labels: self.labels,
+            value: self.value,
+            timestamp: Some(timestamp),
+            value_set: PhantomData {},
+        }
     }
 
-    pub fn value(self, value: N) -> PrometheusInstance<'a, N, Yes> {
+    pub fn with_value(self, value: N) -> PrometheusInstance<'a, N, Yes> {
         PrometheusInstance {
             metric: self.metric,
             labels: self.labels,

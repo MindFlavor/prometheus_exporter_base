@@ -1,6 +1,4 @@
-use prometheus_exporter_base::{
-    render_prometheus, MetricType, PrometheusInstance, PrometheusMetric,
-};
+use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
 use std::fs::read_dir;
 
 #[derive(Debug, Clone, Default)]
@@ -36,16 +34,15 @@ async fn main() {
             .with_metric_type(MetricType::Counter)
             .with_help("Size of the folder")
             .build();
+
         let mut s = pc.render_header();
 
-        let mut instance = pc.create_instance();
-        instance
-            .with_label("folder", "/var/log")
-            .with_value(total_size_log);
-
-        let mut attributes = Vec::new();
-        attributes.push(("folder", "/var/log/"));
-        s.push_str(&pc.render_sample(Some(&attributes), total_size_log, None));
+        s.push_str(
+            &pc.create_instance()
+                .with_label("folder", "/var/log")
+                .with_value(total_size_log)
+                .render(),
+        );
 
         Ok(s)
     })
