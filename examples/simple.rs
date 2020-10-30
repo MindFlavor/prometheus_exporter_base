@@ -1,4 +1,6 @@
-use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
+use prometheus_exporter_base::{
+    render_prometheus, MetricType, PrometheusInstance, PrometheusMetric,
+};
 use std::fs::read_dir;
 
 #[derive(Debug, Clone, Default)]
@@ -29,17 +31,37 @@ async fn main() {
 
         let total_size_log = calculate_file_size("/var/log").unwrap();
 
-        let pc = PrometheusMetric::build()
+        let p = PrometheusMetric::build()
             .with_name("folder_size")
             .with_metric_type(MetricType::Counter)
             .with_help("Size of the folder")
             .build();
 
-        Ok(pc
-            .create_instance()
-            .with_label("folder", "/var/log")
-            .with_value(total_size_log)
-            .render_with_header())
+        p.with_instance(
+            &PrometheusInstance::new()
+                .with_label("folder", "/var/log")
+                .with_value(total_size_log),
+        );
+
+        p.with_instance(
+            &PrometheusInstance::new()
+                .with_label("folder", "/var/log")
+                .with_value(total_size_log),
+        );
+
+        Ok("s".to_owned())
+
+        //Ok(PrometheusMetric::build()
+        //    .with_name("folder_size")
+        //    .with_metric_type(MetricType::Counter)
+        //    .with_help("Size of the folder")
+        //    .build()
+        //    .with_instance(
+        //        &PrometheusInstance::new()
+        //            .with_label("folder", "/var/log")
+        //            .with_value(total_size_log),
+        //    )
+        //    .render())
     })
     .await;
 }

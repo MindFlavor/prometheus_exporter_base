@@ -141,10 +141,6 @@ where
 // methods callable only when every mandatory field has been filled
 impl<'a> PrometheusMetricBuilder<'a, Yes, Yes, Yes> {
     pub fn build(self) -> PrometheusMetric<'a> {
-        PrometheusMetric {
-            counter_name: self.name(),
-            counter_type: self.metric_type,
-            counter_help: self.help(),
-        }
+        PrometheusMetric::new(self.name(), self.metric_type, self.help())
     }
 }

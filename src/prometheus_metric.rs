@@ -1,12 +1,13 @@
 use crate::prometheus_metric_builder::PrometheusMetricBuilder;
-use crate::{MetricType, MissingValue, No, PrometheusInstance};
-use num::Num;
+use crate::{MetricType, No, RenderToPrometheus};
+use supercow::Supercow;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct PrometheusMetric<'a> {
     pub counter_name: &'a str,
     pub counter_type: MetricType,
     pub counter_help: &'a str,
+    renderable_objects: Vec<Supercow<'a, dyn RenderToPrometheus>>,
 }
 
 impl<'a> PrometheusMetric<'a> {
@@ -19,14 +20,8 @@ impl<'a> PrometheusMetric<'a> {
             counter_name,
             counter_type,
             counter_help,
+            renderable_objects: Vec::new(),
         }
-    }
-
-    pub fn create_instance<N>(&'a self) -> PrometheusInstance<'a, N, MissingValue>
-    where
-        N: Num + std::fmt::Display,
-    {
-        self.into()
     }
 
     pub fn build() -> PrometheusMetricBuilder<'a, No, No, No> {
@@ -39,14 +34,44 @@ impl<'a> PrometheusMetric<'a> {
             self.counter_name, self.counter_help, self.counter_name, self.counter_type
         )
     }
-}
 
-impl<'a, N> Into<PrometheusInstance<'a, N, MissingValue>> for &'a PrometheusMetric<'a>
-where
-    N: Num + std::fmt::Display,
-{
-    fn into(self) -> PrometheusInstance<'a, N, MissingValue> {
-        PrometheusInstance::new(self)
+    pub fn with_instance(&mut self, renderable_object: &'a dyn RenderToPrometheus) -> &mut Self {
+        self.renderable_objects.push(renderable_object);
+        self
+    }
+
+    pub fn render(&self) -> String {
+        let mut s = self.render_header();
+
+        for renderable_object in &self.renderable_objects {
+            s.push_str(&format!("{}", self.counter_name));
+            let labels = renderable_object.labels();
+
+            if labels.is_empty() {
+                s.push_str(&format!(" {}", renderable_object.value()));
+            } else {
+                s.push_str("{");
+                let mut first = true;
+                for (key, val) in labels.iter() {
+                    if !first {
+                        s.push_str(",");
+                    } else {
+                        first = false;
+                    }
+
+                    s.push_str(&format!("{}=\"{}\"", key, val));
+                }
+
+                s.push_str(&format!("}} {}", renderable_object.value()));
+            }
+            if let Some(timestamp) = renderable_object.timestamp() {
+                s.push_str(" ");
+                s.push_str(&timestamp.to_string());
+            }
+            s.push_str("\n");
+        }
+
+        s
     }
 }
 

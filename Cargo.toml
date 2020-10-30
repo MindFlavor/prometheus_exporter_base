@@ -25,6 +25,7 @@ hyper                = "0.13.5"
 hyper-rustls         = "0.20.0"
 http                 = "0.2.1"
 num                  = "0.2.1"
+supercow = "*"
 
 [dev-dependencies]
 tokio                = { version = "0.2", features = ["macros"] }

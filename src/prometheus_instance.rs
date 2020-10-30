@@ -1,4 +1,4 @@
-use crate::{PrometheusMetric, ToAssign, Yes};
+use crate::{RenderToPrometheus, ToAssign, Yes};
 use num::Num;
 use std::convert::Into;
 use std::marker::PhantomData;
@@ -10,10 +10,9 @@ impl ToAssign for MissingValue {}
 #[derive(Debug, Clone)]
 pub struct PrometheusInstance<'a, N, ValueSet>
 where
-    N: Num + std::fmt::Display,
+    N: Num + std::fmt::Display + std::fmt::Debug,
 {
-    metric: &'a PrometheusMetric<'a>,
-    labels: Option<Vec<(&'a str, &'a str)>>,
+    labels: Vec<(&'a str, &'a str)>,
     value: Option<N>,
     timestamp: Option<i64>,
     value_set: PhantomData<ValueSet>,
@@ -21,12 +20,11 @@ where
 
 impl<'a, N> PrometheusInstance<'a, N, MissingValue>
 where
-    N: Num + std::fmt::Display,
+    N: Num + std::fmt::Display + std::fmt::Debug,
 {
-    pub(crate) fn new(metric: &'a PrometheusMetric) -> Self {
+    pub fn new() -> Self {
         Self {
-            metric,
-            labels: None,
+            labels: Vec::new(),
             value: None,
             timestamp: None,
             value_set: PhantomData {},
@@ -36,24 +34,17 @@ where
 
 impl<'a, N, ValueSet> PrometheusInstance<'a, N, ValueSet>
 where
-    N: Num + std::fmt::Display,
+    N: Num + std::fmt::Display + std::fmt::Debug,
 {
     pub fn with_label<L, V>(self, l: L, v: V) -> Self
     where
         L: Into<&'a str>,
         V: Into<&'a str>,
     {
-        let labels = if let Some(mut labels) = self.labels {
-            labels.push((l.into(), v.into()));
-            Some(labels)
-        } else {
-            let mut labels = Vec::new();
-            labels.push((l.into(), v.into()));
-            Some(labels)
-        };
+        let mut labels = self.labels;
+        labels.push((l.into(), v.into()));
 
         PrometheusInstance {
-            metric: self.metric,
             labels,
             value: self.value,
             timestamp: self.timestamp,
@@ -63,7 +54,6 @@ where
 
     pub fn with_timestamp(self, timestamp: i64) -> Self {
         PrometheusInstance {
-            metric: self.metric,
             labels: self.labels,
             value: self.value,
             timestamp: Some(timestamp),
@@ -73,7 +63,6 @@ where
 
     pub fn with_value(self, value: N) -> PrometheusInstance<'a, N, Yes> {
         PrometheusInstance {
-            metric: self.metric,
             labels: self.labels,
             value: Some(value),
             timestamp: self.timestamp,
@@ -82,46 +71,19 @@ where
     }
 }
 
-impl<'a, N> PrometheusInstance<'a, N, Yes>
+impl<'a, N> RenderToPrometheus for PrometheusInstance<'a, N, Yes>
 where
-    N: Num + std::fmt::Display,
+    N: Num + std::fmt::Display + std::fmt::Debug,
 {
-    pub fn render_with_header(&self) -> String {
-        format!("{}\n{}", self.metric.render_header(), self.render())
+    fn labels(&self) -> &[(&str, &str)] {
+        &self.labels
     }
 
-    pub fn render(&self) -> String {
-        // this is safe because of the type
-        let value = self.value.as_ref().unwrap();
+    fn value(&self) -> String {
+        self.value.as_ref().unwrap().to_string()
+    }
 
-        let mut s = format!("{}", self.metric.counter_name);
-        if let Some(labels) = &self.labels {
-            if labels.is_empty() {
-                s.push_str(&format!(" {}", value.to_string()));
-            } else {
-                s.push_str("{");
-                let mut first = true;
-                for (key, val) in labels.iter() {
-                    if !first {
-                        s.push_str(",");
-                    } else {
-                        first = false;
-                    }
-
-                    s.push_str(&format!("{}=\"{}\"", key, val));
-                }
-
-                s.push_str(&format!("}} {}", value.to_string()));
-            }
-        } else {
-            s.push_str(" ");
-            s.push_str(&value.to_string());
-        }
-        if let Some(timestamp) = self.timestamp {
-            s.push_str(" ");
-            s.push_str(&timestamp.to_string());
-        }
-        s.push_str("\n");
-        s
+    fn timestamp(&self) -> Option<i64> {
+        self.timestamp
     }
 }

@@ -10,6 +10,7 @@ use std::sync::Arc;
 mod prometheus_metric;
 mod render_to_prometheus;
 pub use prometheus_metric::PrometheusMetric;
+pub use render_to_prometheus::RenderToPrometheus;
 mod metric_type;
 mod prometheus_instance;
 pub use metric_type::MetricType;
