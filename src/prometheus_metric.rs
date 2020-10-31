@@ -98,7 +98,7 @@ impl<'a> PrometheusMetric<'a> {
 
         for rendered_instance in &self.rendered_instances {
             s.push_str(&format!("{}{}", self.counter_name, rendered_instance));
-            s.push_str("\n");
+            s.push('\n');
         }
 
         s

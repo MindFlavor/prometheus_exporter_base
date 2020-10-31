@@ -33,6 +33,15 @@ where
     }
 }
 
+impl<'a, N> Default for PrometheusInstance<'a, N, MissingValue>
+where
+    N: Num + std::fmt::Display + std::fmt::Debug,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a, N, ValueSet> PrometheusInstance<'a, N, ValueSet>
 where
     N: Num + std::fmt::Display + std::fmt::Debug,
@@ -127,11 +136,11 @@ where
         if self.labels.is_empty() {
             s.push_str(&format!(" {}", self.value.as_ref().unwrap().to_string()));
         } else {
-            s.push_str("{");
+            s.push('{');
             let mut first = true;
             for (key, val) in self.labels.iter() {
                 if !first {
-                    s.push_str(",");
+                    s.push(',');
                 } else {
                     first = false;
                 }
@@ -142,7 +151,7 @@ where
             s.push_str(&format!("}} {}", self.value.as_ref().unwrap().to_string()));
         }
         if let Some(timestamp) = self.timestamp {
-            s.push_str(" ");
+            s.push(' ');
             s.push_str(&timestamp.to_string());
         }
 
