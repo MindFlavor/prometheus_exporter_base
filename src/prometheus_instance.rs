@@ -53,6 +53,17 @@ where
         }
     }
 
+    /// Adds the optional timestamp to the instance.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// use prometheus_exporter_base::prelude::*;
+    ///
+    /// PrometheusInstance::new()
+    ///     .with_timestamp(123)
+    ///     .with_value(123);
+    /// ```
     pub fn with_timestamp(self, timestamp: u128) -> Self {
         PrometheusInstance {
             labels: self.labels,
@@ -62,6 +73,19 @@ where
         }
     }
 
+    /// Adds the current timestamp to the instance. The timestamp
+    /// is calculated as milliseconds from the current `UNIX_EPOCH` as per
+    /// specification.
+    /// Example:
+    ///
+    /// ```
+    /// use prometheus_exporter_base::prelude::*;
+    ///
+    /// PrometheusInstance::new()
+    ///     .with_current_timestamp()
+    ///     .expect("failed to get the UNIX epoch")
+    ///     .with_value(123);
+    /// ```
     pub fn with_current_timestamp(self) -> Result<Self, SystemTimeError> {
         Ok(PrometheusInstance {
             labels: self.labels,
@@ -71,6 +95,18 @@ where
         })
     }
 
+    /// Adds the current value to the instance. The value
+    /// will be formatted as float as per
+    /// specification.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// use prometheus_exporter_base::prelude::*;
+    ///
+    /// PrometheusInstance::new()
+    ///     .with_value(123);
+    /// ```
     pub fn with_value(self, value: N) -> PrometheusInstance<'a, N, Yes> {
         PrometheusInstance {
             labels: self.labels,

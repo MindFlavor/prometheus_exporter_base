@@ -1,3 +1,39 @@
+//! This crate simplifies the generation of valid Prometheus metrics. You should start by building
+//! a [`PrometheusMetric`] and then adding as many [`PrometheusInstance`] as needed.
+//!
+//! [`PrometheusMetric`] specifies the [`counter name`], [`type`] and [`help`]. Each [`PrometheusInstance`]
+//! specifies the [`value`] and the optional [`labels`] and [`timestamp`].
+//!
+//! [`counter name`]: prometheus_metric_builder/struct.PrometheusMetricBuilder.html#method.with_name
+//! [`type`]: prometheus_metric_builder/struct.PrometheusMetricBuilder.html#method.with_metric_type
+//! [`help`]: prometheus_metric_builder/struct.PrometheusMetricBuilder.html#method.with_help
+//! [`counter name`]: struct.PrometheusMetricBuilder.html#method.with_name
+//! [`value`]: struct.PrometheusInstance.html#method.with_value
+//! [`labels`]: struct.PrometheusInstance.html#method.with_label
+//! [`timestamp`]: struct.PrometheusInstance.html#method.with_timestamp
+//!
+//! # Examples
+//!
+//! Basic usage:
+//!
+//! ```
+//! use prometheus_exporter_base::prelude::*;
+//!
+//! let rendered_string = PrometheusMetric::build()
+//!     .with_name("folder_size")
+//!     .with_metric_type(MetricType::Counter)
+//!     .with_help("Size of the folder")
+//!     .build()
+//!     .render_and_append_instance(
+//!         &PrometheusInstance::new()
+//!             .with_label("folder", "/var/log")
+//!             .with_value(100)
+//!             .with_current_timestamp()
+//!             .expect("error getting the UNIX epoch"),
+//!     )
+//!     .render();
+//! ```
+
 extern crate failure;
 extern crate serde_json;
 use http::StatusCode;
@@ -10,6 +46,7 @@ use std::sync::Arc;
 mod prometheus_metric;
 mod render_to_prometheus;
 pub use prometheus_metric::PrometheusMetric;
+pub mod prelude;
 pub use render_to_prometheus::RenderToPrometheus;
 mod metric_type;
 mod prometheus_instance;
@@ -17,7 +54,7 @@ pub use metric_type::MetricType;
 pub use prometheus_instance::{MissingValue, PrometheusInstance};
 use std::future::Future;
 use std::net::SocketAddr;
-mod prometheus_metric_builder;
+pub mod prometheus_metric_builder;
 
 pub trait ToAssign {}
 #[derive(Debug, Clone, Copy)]

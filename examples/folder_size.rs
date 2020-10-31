@@ -1,8 +1,6 @@
 use clap::{crate_authors, crate_name, crate_version, Arg};
 use log::{info, trace};
-use prometheus_exporter_base::{
-    render_prometheus, MetricType, PrometheusInstance, PrometheusMetric,
-};
+use prometheus_exporter_base::prelude::*;
 use std::env;
 use std::fs::read_dir;
 
@@ -62,39 +60,30 @@ async fn main() {
 
     info!("starting exporter on {}", addr);
 
-    render_prometheus(addr, MyOptions::default(), |request, options| {
-        async move {
-            trace!(
-                "in our render_prometheus(request == {:?}, options == {:?})",
-                request,
-                options
+    render_prometheus(addr, MyOptions::default(), |request, options| async move {
+        trace!(
+            "in our render_prometheus(request == {:?}, options == {:?})",
+            request,
+            options
+        );
+
+        let mut pc = PrometheusMetric::build()
+            .with_name("folder_size")
+            .with_metric_type(MetricType::Counter)
+            .with_help("Size of the folder")
+            .build();
+
+        for folder in &vec!["/var/log", "/tmp"] {
+            pc.render_and_append_instance(
+                &PrometheusInstance::new()
+                    .with_label("folder", folder.as_ref())
+                    .with_value(calculate_file_size(folder).expect("cannot calculate folder size"))
+                    .with_current_timestamp()
+                    .expect("error getting the current UNIX epoch"),
             );
-
-            // let's calculate the size of /var/log files and /tmp files as an example
-            let total_size_log = calculate_file_size("/var/log")?;
-            let total_size_tmp = calculate_file_size("/tmp")?;
-
-            Ok(PrometheusMetric::build()
-                .with_name("folder_size")
-                .with_metric_type(MetricType::Counter)
-                .with_help("Size of the folder")
-                .build()
-                .render_and_append_instance(
-                    &PrometheusInstance::new()
-                        .with_label("folder", "/var/log")
-                        .with_value(total_size_log)
-                        .with_current_timestamp()
-                        .expect("error getting the current UNIX epoch"),
-                )
-                .render_and_append_instance(
-                    &PrometheusInstance::new()
-                        .with_label("folder", "/tmp")
-                        .with_value(total_size_tmp)
-                        .with_current_timestamp()
-                        .expect("error getting the current UNIX epoch"),
-                )
-                .render())
         }
+
+        Ok(pc.render())
     })
     .await;
 }

@@ -70,6 +70,7 @@ where
     MetricTypeSet: ToAssign,
     HelpSet: ToAssign,
 {
+    /// Specifies the metric name. *Mandatory*.
     #[inline]
     pub fn with_name(
         self,
@@ -91,6 +92,7 @@ where
     NameSet: ToAssign,
     HelpSet: ToAssign,
 {
+    /// Specifies the metric type. *Mandatory*.
     #[inline]
     pub fn with_metric_type(
         self,
@@ -112,6 +114,7 @@ where
     NameSet: ToAssign,
     MetricTypeSet: ToAssign,
 {
+    /// Specifies the metric help. *Mandatory*.
     #[inline]
     pub fn with_help(
         self,
@@ -140,7 +143,28 @@ where
 
 // methods callable only when every mandatory field has been filled
 impl<'a> PrometheusMetricBuilder<'a, Yes, Yes, Yes> {
+    /// Call this function when all the mandatory
+    /// fields have been set and you are done constructing the [`PrometheusMetric`]
+    /// instance. If you miss something a
+    /// compile-time error will be issued.
+    ///
+    /// Example:
+    ///
+    /// ```
+    /// use prometheus_exporter_base::prelude::*;
+    ///
+    /// let prometheus_metric = PrometheusMetric::build()
+    ///     .with_name("folder_size")
+    ///     .with_metric_type(MetricType::Counter)
+    ///     .with_help("Size of the folder")
+    ///     .build();
+    /// ```
     pub fn build(self) -> PrometheusMetric<'a> {
-        PrometheusMetric::new(self.name(), self.metric_type, self.help())
+        PrometheusMetric {
+            counter_name: self.name(),
+            counter_type: self.metric_type,
+            counter_help: self.help(),
+            rendered_instances: Vec::new(),
+        }
     }
 }

@@ -1,6 +1,4 @@
-use prometheus_exporter_base::{
-    render_prometheus, MetricType, PrometheusInstance, PrometheusMetric,
-};
+use prometheus_exporter_base::prelude::*;
 use std::fs::read_dir;
 
 #[derive(Debug, Clone, Default)]
