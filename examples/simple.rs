@@ -31,37 +31,19 @@ async fn main() {
 
         let total_size_log = calculate_file_size("/var/log").unwrap();
 
-        let p = PrometheusMetric::build()
+        let mut p = PrometheusMetric::build()
             .with_name("folder_size")
             .with_metric_type(MetricType::Counter)
             .with_help("Size of the folder")
             .build();
 
-        p.with_instance(
+        p.render_and_append(
             &PrometheusInstance::new()
                 .with_label("folder", "/var/log")
                 .with_value(total_size_log),
         );
 
-        p.with_instance(
-            &PrometheusInstance::new()
-                .with_label("folder", "/var/log")
-                .with_value(total_size_log),
-        );
-
-        Ok("s".to_owned())
-
-        //Ok(PrometheusMetric::build()
-        //    .with_name("folder_size")
-        //    .with_metric_type(MetricType::Counter)
-        //    .with_help("Size of the folder")
-        //    .build()
-        //    .with_instance(
-        //        &PrometheusInstance::new()
-        //            .with_label("folder", "/var/log")
-        //            .with_value(total_size_log),
-        //    )
-        //    .render())
+        Ok(p.render())
     })
     .await;
 }

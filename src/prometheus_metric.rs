@@ -1,13 +1,12 @@
 use crate::prometheus_metric_builder::PrometheusMetricBuilder;
 use crate::{MetricType, No, RenderToPrometheus};
-use supercow::Supercow;
 
 #[derive(Debug)]
 pub struct PrometheusMetric<'a> {
     pub counter_name: &'a str,
     pub counter_type: MetricType,
     pub counter_help: &'a str,
-    renderable_objects: Vec<Supercow<'a, dyn RenderToPrometheus>>,
+    rendered_instances: Vec<String>,
 }
 
 impl<'a> PrometheusMetric<'a> {
@@ -20,7 +19,7 @@ impl<'a> PrometheusMetric<'a> {
             counter_name,
             counter_type,
             counter_help,
-            renderable_objects: Vec::new(),
+            rendered_instances: Vec::new(),
         }
     }
 
@@ -28,46 +27,26 @@ impl<'a> PrometheusMetric<'a> {
         PrometheusMetricBuilder::new()
     }
 
-    pub fn render_header(&self) -> String {
+    fn render_header(&self) -> String {
         format!(
             "# HELP {} {}\n# TYPE {} {}\n",
             self.counter_name, self.counter_help, self.counter_name, self.counter_type
         )
     }
 
-    pub fn with_instance(&mut self, renderable_object: &'a dyn RenderToPrometheus) -> &mut Self {
-        self.renderable_objects.push(renderable_object);
+    pub fn render_and_append(
+        &mut self,
+        rendereable_instance: &dyn RenderToPrometheus,
+    ) -> &mut Self {
+        self.rendered_instances.push(rendereable_instance.render());
         self
     }
 
     pub fn render(&self) -> String {
         let mut s = self.render_header();
 
-        for renderable_object in &self.renderable_objects {
-            s.push_str(&format!("{}", self.counter_name));
-            let labels = renderable_object.labels();
-
-            if labels.is_empty() {
-                s.push_str(&format!(" {}", renderable_object.value()));
-            } else {
-                s.push_str("{");
-                let mut first = true;
-                for (key, val) in labels.iter() {
-                    if !first {
-                        s.push_str(",");
-                    } else {
-                        first = false;
-                    }
-
-                    s.push_str(&format!("{}=\"{}\"", key, val));
-                }
-
-                s.push_str(&format!("}} {}", renderable_object.value()));
-            }
-            if let Some(timestamp) = renderable_object.timestamp() {
-                s.push_str(" ");
-                s.push_str(&timestamp.to_string());
-            }
+        for rendered_instance in &self.rendered_instances {
+            s.push_str(&format!("{}{}", self.counter_name, rendered_instance));
             s.push_str("\n");
         }
 
@@ -78,11 +57,15 @@ impl<'a> PrometheusMetric<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::MetricType;
+    use crate::{MetricType, PrometheusInstance};
 
     #[test]
     fn test_header() {
-        let pc = PrometheusMetric::new("pippo_total", MetricType::Counter, "Number of pippos");
+        let pc = PrometheusMetric::build()
+            .with_name("pippo_total")
+            .with_metric_type(MetricType::Counter)
+            .with_help("Number of pippos")
+            .build();
 
         assert_eq!(
             pc.render_header(),
@@ -92,41 +75,66 @@ mod tests {
 
     #[test]
     fn test_labels() {
-        let pc = PrometheusMetric::new("pippo_total", MetricType::Counter, "Number of pippos");
-        let mut number = 0;
+        let mut pc = PrometheusMetric::build()
+            .with_name("pippo_total")
+            .with_metric_type(MetricType::Counter)
+            .with_help("Number of pippos")
+            .build();
 
-        for _ in 0..4 {
-            let ret = pc
-                .create_instance()
-                .with_label("food", "chicken")
-                .with_label("instance", &*number.to_string())
-                .with_value(number)
-                .render();
-
-            assert_eq!(
-                ret,
-                format!(
-                    "pippo_total{{food=\"chicken\",instance=\"{}\"}} {}\n",
-                    number, number
-                )
+        for number in 0..4 {
+            pc.render_and_append(
+                &PrometheusInstance::new()
+                    .with_label("food", "chicken")
+                    .with_label("instance", &*number.to_string())
+                    .with_value(number),
             );
-            number += 1;
         }
+
+        assert_eq!(
+            pc.render(),
+            "# HELP pippo_total Number of pippos\n\
+        # TYPE pippo_total counter\n\
+        pippo_total{food=\"chicken\",instance=\"0\"} 0\n\
+        pippo_total{food=\"chicken\",instance=\"1\"} 1\n\
+        pippo_total{food=\"chicken\",instance=\"2\"} 2\n\
+        pippo_total{food=\"chicken\",instance=\"3\"} 3\n"
+        );
     }
 
     #[test]
     fn test_no_labels() {
-        let pc = PrometheusMetric::new("gigino_total", MetricType::Counter, "Number of giginos");
+        let final_string = PrometheusMetric::build()
+            .with_name("gigino_total")
+            .with_metric_type(MetricType::Counter)
+            .with_help("Number of giginos")
+            .build()
+            .render_and_append(&PrometheusInstance::new().with_value(100))
+            .render();
+
         assert_eq!(
-            pc.create_instance().with_value(100).render(),
-            format!("gigino_total {}\n", 100)
+            final_string,
+            "# HELP gigino_total Number of giginos\n\
+        # TYPE gigino_total counter\n\
+        gigino_total 100\n"
         );
+
+        let final_string = PrometheusMetric::build()
+            .with_name("gigino_total")
+            .with_metric_type(MetricType::Counter)
+            .with_help("Number of giginos")
+            .build()
+            .render_and_append(
+                &PrometheusInstance::new()
+                    .with_value(100)
+                    .with_timestamp(9223372036854775807),
+            )
+            .render();
+
         assert_eq!(
-            pc.create_instance()
-                .with_value(100)
-                .with_timestamp(9223372036854775807)
-                .render(),
-            format!("gigino_total 100 9223372036854775807\n")
+            final_string,
+            "# HELP gigino_total Number of giginos\n\
+        # TYPE gigino_total counter\n\
+        gigino_total 100 9223372036854775807\n"
         );
     }
 }

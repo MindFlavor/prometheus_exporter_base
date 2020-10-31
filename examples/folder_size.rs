@@ -1,6 +1,8 @@
 use clap::{crate_authors, crate_name, crate_version, Arg};
 use log::{info, trace};
-use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
+use prometheus_exporter_base::{
+    render_prometheus, MetricType, PrometheusInstance, PrometheusMetric,
+};
 use std::env;
 use std::fs::read_dir;
 
@@ -71,25 +73,23 @@ async fn main() {
             // let's calculate the size of /var/log files and /tmp files as an example
             let total_size_log = calculate_file_size("/var/log")?;
             let total_size_tmp = calculate_file_size("/tmp")?;
-            let pc =
-                PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
-            let mut s = pc.render_header();
 
-            s.push_str(
-                &pc.create_instance()
-                    .with_label("folder", "/var/log/")
-                    .with_value(total_size_log)
-                    .render(),
-            );
-
-            s.push_str(
-                &pc.create_instance()
-                    .with_label("folder", "/tmp")
-                    .with_value(total_size_tmp)
-                    .render(),
-            );
-
-            Ok(s)
+            Ok(PrometheusMetric::build()
+                .with_name("folder_size")
+                .with_metric_type(MetricType::Counter)
+                .with_help("Size of the folder")
+                .build()
+                .render_and_append(
+                    &PrometheusInstance::new()
+                        .with_label("folder", "/var/log")
+                        .with_value(total_size_log),
+                )
+                .render_and_append(
+                    &PrometheusInstance::new()
+                        .with_label("folder", "/tmp")
+                        .with_value(total_size_tmp),
+                )
+                .render())
         }
     })
     .await;

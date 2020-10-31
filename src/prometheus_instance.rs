@@ -75,15 +75,31 @@ impl<'a, N> RenderToPrometheus for PrometheusInstance<'a, N, Yes>
 where
     N: Num + std::fmt::Display + std::fmt::Debug,
 {
-    fn labels(&self) -> &[(&str, &str)] {
-        &self.labels
-    }
+    fn render(&self) -> String {
+        let mut s = String::new();
 
-    fn value(&self) -> String {
-        self.value.as_ref().unwrap().to_string()
-    }
+        if self.labels.is_empty() {
+            s.push_str(&format!(" {}", self.value.as_ref().unwrap().to_string()));
+        } else {
+            s.push_str("{");
+            let mut first = true;
+            for (key, val) in self.labels.iter() {
+                if !first {
+                    s.push_str(",");
+                } else {
+                    first = false;
+                }
 
-    fn timestamp(&self) -> Option<i64> {
-        self.timestamp
+                s.push_str(&format!("{}=\"{}\"", key, val));
+            }
+
+            s.push_str(&format!("}} {}", self.value.as_ref().unwrap().to_string()));
+        }
+        if let Some(timestamp) = self.timestamp {
+            s.push_str(" ");
+            s.push_str(&timestamp.to_string());
+        }
+
+        s
     }
 }
