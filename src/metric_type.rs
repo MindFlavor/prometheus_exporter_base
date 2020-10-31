@@ -98,5 +98,4 @@ mod tests {
             MetricType::try_from("histogram").unwrap()
         );
     }
-
 }

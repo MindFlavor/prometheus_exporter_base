@@ -1,4 +1,4 @@
-use prometheus_exporter_base::{render_prometheus, MetricType, PrometheusMetric};
+use prometheus_exporter_base::prelude::*;
 use std::fs::read_dir;
 
 #[derive(Debug, Clone, Default)]
@@ -29,14 +29,19 @@ async fn main() {
 
         let total_size_log = calculate_file_size("/var/log").unwrap();
 
-        let pc = PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
-        let mut s = pc.render_header();
-
-        let mut attributes = Vec::new();
-        attributes.push(("folder", "/var/log/"));
-        s.push_str(&pc.render_sample(Some(&attributes), total_size_log, None));
-
-        Ok(s)
+        Ok(PrometheusMetric::build()
+            .with_name("folder_size")
+            .with_metric_type(MetricType::Counter)
+            .with_help("Size of the folder")
+            .build()
+            .render_and_append_instance(
+                &PrometheusInstance::new()
+                    .with_label("folder", "/var/log")
+                    .with_value(total_size_log)
+                    .with_current_timestamp()
+                    .expect("error getting the UNIX epoch"),
+            )
+            .render())
     })
     .await;
 }
