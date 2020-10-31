@@ -1,28 +1,77 @@
-# Prometheus exporter base
+# Rust Prometheus exporter base
 
-### Base library for Rust Prometheus exporters
+### Rust base library for Prometheus exporters
 
-master | dev | 
--- | -- |
-[![Build Status](https://travis-ci.org/MindFlavor/prometheus_exporter_base.svg?branch=master)](https://travis-ci.org/MindFlavor/prometheus_exporter_base) | [![Build Status](https://travis-ci.org/MindFlavor/prometheus_exporter_base.svg?branch=dev)](https://travis-ci.org/MindFlavor/prometheus_exporter_base)
+![Rust](https://github.com/MindFlavor/prometheus_exporter_base/workflows/Rust/badge.svg)
 
 [![legal](https://img.shields.io/github/license/mindflavor/prometheus_exporter_base.svg)](LICENSE)
-
-[![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
 
 [![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.31.0)
 [![tag](https://img.shields.io/github/tag/mindflavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/tree/0.31.0)
 [![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.31.0.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/0.31.0.svg)
 
+[![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
+
+
+
 ## Goal
 
-This crate is meant to make writing a proper Prometheus exporter with a minimal effort. It handles most mundane tasks, such as setting up an Hyper server and doing some basic checks (such as rejecting anything but `GET` and responding only to the `/metrics` suffix) so all you have to do is supply a Boxed future that will handle your logic. I use it on these crates: [prometheus_wireguard_exporter](https://github.com/MindFlavor/prometheus_wireguard_exporter) and [prometheus_iota_exporter](https://github.com/MindFlavor/prometheus_iota_exporter) so please refer to these crates if you want to see a real-world example. More simple examples are available in the [examples](https://github.com/MindFlavor/prometheus_exporter_base/tree/master/examples) folder.
+This crate is meant to make writing a proper Prometheus exporter with a minimal effort. 
+It gives you two things.
+
+1. A Rust-y, fluent way to create Prometheus compliant outputs:
+
+```rust 
+PrometheusMetric::build()
+     .with_name("folder_size")
+     .with_metric_type(MetricType::Counter)
+     .with_help("Size of the folder")
+     .build()
+     .render_and_append_instance(
+         &PrometheusInstance::new()
+             .with_label("folder", "/var/log")
+             .with_value(total_size_log)
+             .with_current_timestamp()
+             .expect("error getting the UNIX epoch"),
+     )
+     .render()
+ ```
+ 
+2. It optionally gives you a boilerplate-free Hyper server for exposing your Prometheus metrics. It handles most mundane tasks, such as setting up an Hyper server and doing some basic checks (such as rejecting anything but `GET` and responding only to the `/metrics` suffix) so all you have to do is supply a Boxed future that will handle your logic. 
+
+I use it on these crates: [prometheus_wireguard_exporter](https://github.com/MindFlavor/prometheus_wireguard_exporter) and [prometheus_iota_exporter](https://github.com/MindFlavor/prometheus_iota_exporter) so please refer to these crates if you want to see a real-world example. More simple examples are available in the [examples](https://github.com/MindFlavor/prometheus_exporter_base/tree/master/examples) folder.
 
 ## Usage 
 
-### Main
+### PrometheusMetric
 
-To use the crate all you have to do is call the `render_prometheus` function. This function requests you to pass: 
+The `PrometheusMetric` struct is used by instantiating it and then "rendering" the header and values - optionally specifying labels. This is an example taken from the documentation: 
+
+```rust
+PrometheusMetric::build()
+     .with_name("folder_size")
+     .with_metric_type(MetricType::Counter)
+     .with_help("Size of the folder")
+     .build()
+     .render_and_append_instance(
+         &PrometheusInstance::new()
+             .with_label("folder", "/var/log")
+             .with_value(total_size_log)
+             .with_current_timestamp()
+             .expect("error getting the UNIX epoch"),
+     )
+     .render()
+```
+
+This will give you something like this: 
+
+![](extra/001.png)
+
+For a more complete example please refer to the [examples](https://github.com/MindFlavor/prometheus_exporter_base/tree/master/examples) folder.
+
+### Hyper server
+
+To use Hyper server all you have to do is call the `render_prometheus` function. This function requests you to pass: 
 
 1. The address/port to listen to. For example `([0, 0, 0, 0], 32221).into()` listens on every interface on port 32221.
 2. An arbitrary struct to be passed back to your code (useful for command line arguments). If you don't need it, pass an empty struct.
@@ -38,35 +87,7 @@ render_prometheus(addr, MyOptions::default(), |request, options| {
 });
 ```
 
-As you can see, the crate does not enforce anything to the output, it's up to you to return a meaningful string. In order to help the prometheus compliance the crate offers a struct, called `PrometheusMetric`.
-
-### PrometheusMetric
-
-The `PrometheusMetric` struct is used by instantiating it and then "rendering" the header and values - optionally specifying labels. This is an example taken from the documentation: 
-
-```rust
-// create a counter type metric
-let pc = PrometheusMetric::new("folder_size", MetricType::Counter, "Size of the folder");
-// render the metric header to a string
-let mut s = pc.render_header();
-
-// add a label
-let mut attributes = Vec::new();
-attributes.push(("folder", "/var/log/"));
-// render the sample /var/log with its value
-s.push_str(&pc.render_sample(Some(&attributes), total_size_log, None));
-
-// change the label value to /tmp 
-attributes[0].1 = "/tmp";
-// render the sample /tmp with its value
-s.push_str(&pc.render_sample(Some(&attributes), total_size_tmp, None));
-```
-
-This will give something like this: 
-
-![](extra/001.png)
-
-For a more complete example please refer to the [examples](https://github.com/MindFlavor/prometheus_exporter_base/tree/master/examples) folder.
+As you can see, in order to keep things simple, the Hyper server does not enforce anything to the output. It's up to you to return a meaningful string by using the above mentioned structs. 
 
 ## Testing
 
