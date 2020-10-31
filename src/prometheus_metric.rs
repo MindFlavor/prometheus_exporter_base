@@ -34,7 +34,7 @@ impl<'a> PrometheusMetric<'a> {
         )
     }
 
-    pub fn render_and_append(
+    pub fn render_and_append_instance(
         &mut self,
         rendereable_instance: &dyn RenderToPrometheus,
     ) -> &mut Self {
@@ -82,7 +82,7 @@ mod tests {
             .build();
 
         for number in 0..4 {
-            pc.render_and_append(
+            pc.render_and_append_instance(
                 &PrometheusInstance::new()
                     .with_label("food", "chicken")
                     .with_label("instance", &*number.to_string())
@@ -108,7 +108,7 @@ mod tests {
             .with_metric_type(MetricType::Counter)
             .with_help("Number of giginos")
             .build()
-            .render_and_append(&PrometheusInstance::new().with_value(100))
+            .render_and_append_instance(&PrometheusInstance::new().with_value(100))
             .render();
 
         assert_eq!(
@@ -123,7 +123,7 @@ mod tests {
             .with_metric_type(MetricType::Counter)
             .with_help("Number of giginos")
             .build()
-            .render_and_append(
+            .render_and_append_instance(
                 &PrometheusInstance::new()
                     .with_value(100)
                     .with_timestamp(9223372036854775807),

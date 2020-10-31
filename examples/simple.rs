@@ -36,7 +36,7 @@ async fn main() {
             .with_metric_type(MetricType::Counter)
             .with_help("Size of the folder")
             .build()
-            .render_and_append(
+            .render_and_append_instance(
                 &PrometheusInstance::new()
                     .with_label("folder", "/var/log")
                     .with_value(total_size_log)
