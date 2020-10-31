@@ -2,6 +2,7 @@ use crate::{RenderToPrometheus, ToAssign, Yes};
 use num::Num;
 use std::convert::Into;
 use std::marker::PhantomData;
+use std::time::{SystemTime, SystemTimeError, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Copy)]
 pub struct MissingValue {}
@@ -14,7 +15,7 @@ where
 {
     labels: Vec<(&'a str, &'a str)>,
     value: Option<N>,
-    timestamp: Option<i64>,
+    timestamp: Option<u128>,
     value_set: PhantomData<ValueSet>,
 }
 
@@ -52,13 +53,22 @@ where
         }
     }
 
-    pub fn with_timestamp(self, timestamp: i64) -> Self {
+    pub fn with_timestamp(self, timestamp: u128) -> Self {
         PrometheusInstance {
             labels: self.labels,
             value: self.value,
             timestamp: Some(timestamp),
             value_set: PhantomData {},
         }
+    }
+
+    pub fn with_current_timestamp(self) -> Result<Self, SystemTimeError> {
+        Ok(PrometheusInstance {
+            labels: self.labels,
+            value: self.value,
+            timestamp: Some(SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis()),
+            value_set: PhantomData {},
+        })
     }
 
     pub fn with_value(self, value: N) -> PrometheusInstance<'a, N, Yes> {

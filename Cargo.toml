@@ -3,7 +3,7 @@ name           = "prometheus_exporter_base"
 version        = "0.31.0"
 authors        = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 edition        = "2018"
-description    = "Prometheus Rust exporters base crate with boilerplate"
+description    = "Prometheus Rust exporters base crate with optional boilerplate"
 
 readme         = "README.md"
 license        = "MIT"

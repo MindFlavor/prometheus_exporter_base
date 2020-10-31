@@ -82,12 +82,16 @@ async fn main() {
                 .render_and_append(
                     &PrometheusInstance::new()
                         .with_label("folder", "/var/log")
-                        .with_value(total_size_log),
+                        .with_value(total_size_log)
+                        .with_current_timestamp()
+                        .expect("error getting the current UNIX epoch"),
                 )
                 .render_and_append(
                     &PrometheusInstance::new()
                         .with_label("folder", "/tmp")
-                        .with_value(total_size_tmp),
+                        .with_value(total_size_tmp)
+                        .with_current_timestamp()
+                        .expect("error getting the current UNIX epoch"),
                 )
                 .render())
         }
