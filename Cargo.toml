@@ -1,6 +1,6 @@
 [package]
 name           = "prometheus_exporter_base"
-version        = "1.0.0"
+version        = "1.1.0"
 authors        = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 edition        = "2018"
 description    = "Prometheus Rust exporters base crate with optional boilerplate"
@@ -21,10 +21,21 @@ clap                 = "2.33.0"
 serde                = "1.0.110"
 serde_json           = "1.0.53"
 failure              = "0.1.8"
-hyper                = "0.13.5"
-hyper-rustls         = "0.20.0"
-http                 = "0.2.1"
 num                  = "0.2.1"
+hyper                = {version = "0.13.5", optional = true }
+hyper-rustls         = {version = "0.20.0", optional = true }
+http                 = {version = "0.2.1",  optional = true }
+
+[features]
+hyper_server = ["hyper", "hyper-rustls", "http"]
 
 [dev-dependencies]
 tokio                = { version = "0.2", features = ["macros"] }
+
+[[example]]
+name = "simple"
+required-features = ["hyper_server"]
+
+[[example]]
+name = "folder_size"
+required-features = ["hyper_server"]
