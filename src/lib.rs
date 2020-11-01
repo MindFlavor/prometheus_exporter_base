@@ -4,6 +4,10 @@
 //! [`PrometheusMetric`] specifies the [`counter name`], [`type`] and [`help`]. Each [`PrometheusInstance`]
 //! specifies the [`value`] and the optional [`labels`] and [`timestamp`].
 //!
+//! This crate aslo gives you a zero boilerplate `hyper` server behind the `hyper_server` feature
+//! gate, check [`render_prometheus`] and the `example` folder
+//! for this feature.
+//!
 //! [`counter name`]: prometheus_metric_builder/struct.PrometheusMetricBuilder.html#method.with_name
 //! [`type`]: prometheus_metric_builder/struct.PrometheusMetricBuilder.html#method.with_metric_type
 //! [`help`]: prometheus_metric_builder/struct.PrometheusMetricBuilder.html#method.with_help
@@ -11,6 +15,7 @@
 //! [`value`]: struct.PrometheusInstance.html#method.with_value
 //! [`labels`]: struct.PrometheusInstance.html#method.with_label
 //! [`timestamp`]: struct.PrometheusInstance.html#method.with_timestamp
+//! [`render_prometheus`]: fn.render_prometheus.html
 //!
 //! # Examples
 //!
@@ -36,13 +41,26 @@
 
 extern crate failure;
 extern crate serde_json;
-use http::StatusCode;
-use hyper::service::{make_service_fn, service_fn};
-use hyper::Client;
-use hyper::{body, Body, Request, Response, Server};
+#[allow(unused_imports)]
 use log::{debug, error, info, trace, warn};
+
+#[cfg(feature = "hyper_server")]
+use http::StatusCode;
+#[cfg(feature = "hyper_server")]
+use hyper::{
+    body,
+    service::{make_service_fn, service_fn},
+    Body, Client, Request, Response, Server,
+};
+#[cfg(feature = "hyper_server")]
 use serde::de::DeserializeOwned;
+#[cfg(feature = "hyper_server")]
+use std::future::Future;
+#[cfg(feature = "hyper_server")]
+use std::net::SocketAddr;
+#[cfg(feature = "hyper_server")]
 use std::sync::Arc;
+
 mod prometheus_metric;
 mod render_to_prometheus;
 pub use prometheus_metric::PrometheusMetric;
@@ -52,8 +70,6 @@ mod metric_type;
 mod prometheus_instance;
 pub use metric_type::MetricType;
 pub use prometheus_instance::{MissingValue, PrometheusInstance};
-use std::future::Future;
-use std::net::SocketAddr;
 pub mod prometheus_metric_builder;
 
 pub trait ToAssign {}
@@ -65,6 +81,7 @@ impl ToAssign for Yes {}
 impl ToAssign for No {}
 
 #[inline]
+#[cfg(feature = "hyper_server")]
 async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, failure::Error> {
     let resp = resp.await?;
     debug!("response == {:?}", resp);
@@ -78,6 +95,7 @@ async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, fai
     Ok(s)
 }
 
+#[cfg(feature = "hyper_server")]
 pub async fn create_string_future_from_hyper_request(
     request: hyper::Request<hyper::Body>,
 ) -> Result<String, failure::Error> {
@@ -87,6 +105,7 @@ pub async fn create_string_future_from_hyper_request(
     Ok(extract_body(client.request(request)).await?)
 }
 
+#[cfg(feature = "hyper_server")]
 pub async fn create_deserialize_future_from_hyper_request<T>(
     request: hyper::Request<hyper::Body>,
 ) -> Result<T, failure::Error>
@@ -99,6 +118,7 @@ where
     Ok(t)
 }
 
+#[cfg(feature = "hyper_server")]
 async fn serve_function<O, F, Fut>(
     req: Request<Body>,
     f: F,
@@ -142,6 +162,7 @@ where
     }
 }
 
+#[cfg(feature = "hyper_server")]
 async fn run_server<O, F, Fut>(addr: SocketAddr, options: Arc<O>, f: F) -> Result<(), hyper::Error>
 where
     F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
@@ -169,6 +190,7 @@ where
     serve_future.await
 }
 
+#[cfg(feature = "hyper_server")]
 pub async fn render_prometheus<O, F, Fut>(addr: SocketAddr, options: O, f: F)
 where
     F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,

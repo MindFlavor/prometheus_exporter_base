@@ -6,8 +6,8 @@
 
 [![legal](https://img.shields.io/github/license/mindflavor/prometheus_exporter_base.svg)](LICENSE)
 
-[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/releases/tag/1.0.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/1.0.0.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/1.0.0.svg)
+[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/releases/tag/1.1.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/1.1.0.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/1.1.0.svg)
 
 [![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
 
@@ -34,7 +34,7 @@ PrometheusMetric::build()
      .render()
  ```
  
-2. It optionally gives you a boilerplate-free Hyper server for exposing your Prometheus metrics. It handles most mundane tasks, such as setting up an Hyper server and doing some basic checks (such as rejecting anything but `GET` and responding only to the `/metrics` suffix) so all you have to do is supply a Boxed future that will handle your logic. 
+2. It optionally gives you a boilerplate-free Hyper server for exposing your Prometheus metrics. It handles most mundane tasks, such as setting up an Hyper server and doing some basic checks (such as rejecting anything but `GET` and responding only to the `/metrics` suffix) so all you have to do is supply a Boxed future that will handle your logic (remember to specify the `hyper_server` feature flag in your `Cargo.toml` as well). 
 
 I use it on these crates: [prometheus_wireguard_exporter](https://github.com/MindFlavor/prometheus_wireguard_exporter) and [prometheus_iota_exporter](https://github.com/MindFlavor/prometheus_iota_exporter) so please refer to these crates if you want to see a real-world example. More simple examples are available in the [examples](https://github.com/MindFlavor/prometheus_exporter_base/tree/master/examples) folder.
 
@@ -68,7 +68,7 @@ For a more complete example please refer to the [examples](https://github.com/Mi
 
 ### Hyper server
 
-To use Hyper server all you have to do is call the `render_prometheus` function. This function requests you to pass: 
+To use Hyper server all you have to do is specify the `hyper_server` feature flag and call the `render_prometheus` function. This function requests you to pass: 
 
 1. The address/port to listen to. For example `([0, 0, 0, 0], 32221).into()` listens on every interface on port 32221.
 2. An arbitrary struct to be passed back to your code (useful for command line arguments). If you don't need it, pass an empty struct.
