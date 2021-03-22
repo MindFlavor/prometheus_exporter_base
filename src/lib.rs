@@ -99,7 +99,7 @@ async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, fai
 pub async fn create_string_future_from_hyper_request(
     request: hyper::Request<hyper::Body>,
 ) -> Result<String, failure::Error> {
-    let https = hyper_rustls::HttpsConnector::new();
+    let https = hyper_rustls::HttpsConnector::with_native_roots();
     let client = Client::builder().build::<_, hyper::Body>(https);
 
     Ok(extract_body(client.request(request)).await?)

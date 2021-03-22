@@ -576,7 +576,7 @@ dependencies = [
 
 [[package]]
 name = "prometheus_exporter_base"
-version = "1.1.1"
+version = "1.1.2"
 dependencies = [
  "clap",
  "env_logger",
