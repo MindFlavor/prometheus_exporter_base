@@ -1,6 +1,6 @@
 [package]
 name           = "prometheus_exporter_base"
-version        = "1.1.2"
+version        = "1.2.0"
 authors        = ["Francesco Cogno <francesco.cogno@outlook.com>"]
 edition        = "2018"
 description    = "Prometheus Rust exporters base crate with optional boilerplate"
@@ -20,7 +20,7 @@ env_logger           = "0.7.1"
 clap                 = "2.33.0"
 serde                = "1.0.110"
 serde_json           = "1.0.53"
-failure              = "0.1.8"
+thiserror            = "1.0"
 num                  = "0.2.1"
 hyper                = {version = "0.14", features = ["server"], optional = true }
 hyper-rustls         = {version = "0.22", optional = true }

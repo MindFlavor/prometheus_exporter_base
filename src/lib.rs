@@ -39,7 +39,6 @@
 //!     .render();
 //! ```
 
-extern crate failure;
 extern crate serde_json;
 #[allow(unused_imports)]
 use log::{debug, error, info, trace, warn};
@@ -71,6 +70,8 @@ mod prometheus_instance;
 pub use metric_type::MetricType;
 pub use prometheus_instance::{MissingValue, PrometheusInstance};
 pub mod prometheus_metric_builder;
+#[cfg(feature = "hyper_server")]
+use std::error::Error;
 
 pub trait ToAssign {}
 #[derive(Debug, Clone, Copy)]
@@ -82,7 +83,9 @@ impl ToAssign for No {}
 
 #[inline]
 #[cfg(feature = "hyper_server")]
-async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, failure::Error> {
+async fn extract_body(
+    resp: hyper::client::ResponseFuture,
+) -> Result<String, Box<dyn Error + Send + Sync>> {
     let resp = resp.await?;
     debug!("response == {:?}", resp);
 
@@ -98,7 +101,7 @@ async fn extract_body(resp: hyper::client::ResponseFuture) -> Result<String, fai
 #[cfg(feature = "hyper_server")]
 pub async fn create_string_future_from_hyper_request(
     request: hyper::Request<hyper::Body>,
-) -> Result<String, failure::Error> {
+) -> Result<String, Box<dyn Error + Send + Sync>> {
     let https = hyper_rustls::HttpsConnector::with_native_roots();
     let client = Client::builder().build::<_, hyper::Body>(https);
 
@@ -108,7 +111,7 @@ pub async fn create_string_future_from_hyper_request(
 #[cfg(feature = "hyper_server")]
 pub async fn create_deserialize_future_from_hyper_request<T>(
     request: hyper::Request<hyper::Body>,
-) -> Result<T, failure::Error>
+) -> Result<T, Box<dyn Error + Send + Sync>>
 where
     T: DeserializeOwned + std::fmt::Debug,
 {
@@ -126,7 +129,7 @@ async fn serve_function<O, F, Fut>(
 ) -> Result<Response<Body>, hyper::Error>
 where
     F: FnOnce(Request<Body>, Arc<O>) -> Fut,
-    Fut: Future<Output = Result<String, failure::Error>>,
+    Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>>,
     O: std::fmt::Debug,
 {
     trace!(
@@ -166,7 +169,7 @@ where
 async fn run_server<O, F, Fut>(addr: SocketAddr, options: Arc<O>, f: F) -> Result<(), hyper::Error>
 where
     F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
-    Fut: Future<Output = Result<String, failure::Error>> + Send + 'static,
+    Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>> + Send + 'static,
     O: std::fmt::Debug + Sync + Send + 'static,
 {
     info!("Listening on http://{}", addr);
@@ -194,7 +197,7 @@ where
 pub async fn render_prometheus<O, F, Fut>(addr: SocketAddr, options: O, f: F)
 where
     F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
-    Fut: Future<Output = Result<String, failure::Error>> + Send + 'static,
+    Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>> + Send + 'static,
     O: std::fmt::Debug + Sync + Send + 'static,
 {
     let o = Arc::new(options);
