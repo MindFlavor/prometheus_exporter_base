@@ -30,7 +30,7 @@ http                 = {version = "0.2",  optional = true }
 hyper_server = ["hyper", "hyper-rustls", "http"]
 
 [dev-dependencies]
-tokio                = { version = "0.2", features = ["macros"] }
+tokio                = { version = "1.0", features = ["full"] }
 
 [[example]]
 name = "simple"

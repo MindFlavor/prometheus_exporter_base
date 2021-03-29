@@ -1,4 +1,5 @@
 use prometheus_exporter_base::prelude::*;
+use prometheus_exporter_base::render_prometheus;
 use std::fs::read_dir;
 
 #[derive(Debug, Clone, Default)]

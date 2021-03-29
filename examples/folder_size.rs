@@ -1,6 +1,7 @@
 use clap::{crate_authors, crate_name, crate_version, Arg};
 use log::{info, trace};
 use prometheus_exporter_base::prelude::*;
+use prometheus_exporter_base::render_prometheus;
 use std::env;
 use std::fs::read_dir;
 
