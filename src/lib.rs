@@ -172,7 +172,7 @@ where
     Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>> + Send + 'static,
     O: std::fmt::Debug + Sync + Send + 'static,
 {
-    info!("Listening on http://{}", addr);
+    info!("Listening on http://{}/metrics", addr);
 
     let f = f.clone();
     let options = options.clone();
