@@ -6,8 +6,8 @@
 
 [![legal](https://img.shields.io/github/license/mindflavor/prometheus_exporter_base.svg)](LICENSE)
 
-[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/releases/tag/1.1.0)
-[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/1.1.0.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/1.1.0.svg)
+[![release](https://img.shields.io/github/release/MindFlavor/prometheus_exporter_base.svg)](https://github.com/MindFlavor/prometheus_exporter_base/releases/tag/1.3.0)
+[![commitssince](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/1.3.0.svg)](https://img.shields.io/github/commits-since/mindflavor/prometheus_exporter_base/1.3.0.svg)
 
 [![Crate](https://img.shields.io/crates/v/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratedown](https://img.shields.io/crates/d/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base) [![cratelastdown](https://img.shields.io/crates/dv/prometheus_exporter_base.svg)](https://crates.io/crates/prometheus_exporter_base)
 
