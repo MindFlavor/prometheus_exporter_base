@@ -81,7 +81,7 @@ render_prometheus(addr, MyOptions::default(), |request, options| {
     async {
     	Ok("it works!".to_owned())
     }
-});
+}).await;
 ```
 
 As you can see, in order to keep things simple, the Hyper server does not enforce anything to the output. It's up to you to return a meaningful string by using the above mentioned structs. 
