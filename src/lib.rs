@@ -71,6 +71,8 @@ pub use metric_type::MetricType;
 pub use prometheus_instance::{MissingValue, PrometheusInstance};
 pub mod prometheus_metric_builder;
 #[cfg(feature = "hyper_server")]
+use hyper::http::header::CONTENT_TYPE;
+#[cfg(feature = "hyper_server")]
 use std::error::Error;
 
 pub trait ToAssign {}
@@ -152,7 +154,11 @@ where
         trace!("serve_function:: options == {:?}", options);
 
         Ok(match f(req, options).await {
-            Ok(response) => Response::new(Body::from(response)),
+            Ok(response) => Response::builder()
+                .status(StatusCode::OK)
+                .header(CONTENT_TYPE, "text/plain; version=0.0.4")
+                .body(Body::from(response))
+                .unwrap(),
             Err(err) => {
                 warn!("internal server error == {:?}", err);
 
