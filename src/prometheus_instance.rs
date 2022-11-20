@@ -134,7 +134,7 @@ where
         let mut s = String::new();
 
         if self.labels.is_empty() {
-            s.push_str(&format!(" {}", self.value.as_ref().unwrap().to_string()));
+            s.push_str(&format!(" {}", self.value.as_ref().unwrap()));
         } else {
             s.push('{');
             let mut first = true;
@@ -148,7 +148,7 @@ where
                 s.push_str(&format!("{}=\"{}\"", key, val));
             }
 
-            s.push_str(&format!("}} {}", self.value.as_ref().unwrap().to_string()));
+            s.push_str(&format!("}} {}", self.value.as_ref().unwrap()));
         }
         if let Some(timestamp) = self.timestamp {
             s.push(' ');

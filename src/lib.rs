@@ -107,7 +107,7 @@ pub async fn create_string_future_from_hyper_request(
     let https = hyper_rustls::HttpsConnector::with_native_roots();
     let client = Client::builder().build::<_, hyper::Body>(https);
 
-    Ok(extract_body(client.request(request)).await?)
+    extract_body(client.request(request)).await
 }
 
 #[cfg(feature = "hyper_server")]
