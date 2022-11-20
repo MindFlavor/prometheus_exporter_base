@@ -18,6 +18,8 @@ fn calculate_file_size(path: &str) -> Result<u64, std::io::Error> {
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     let addr = ([0, 0, 0, 0], 32221).into();
     println!("starting exporter on {}", addr);
 

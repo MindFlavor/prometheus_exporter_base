@@ -143,6 +143,18 @@ where
         req.uri().path(),
         req.method()
     );
+
+    trace!(
+        "received headers ==> {}",
+        req.headers()
+            .iter()
+            .map(|(header_name, header_value)| {
+                format!("{} => {}", header_name, header_value.to_str().unwrap())
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+
     if req.uri().path() != "/metrics" {
         Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
