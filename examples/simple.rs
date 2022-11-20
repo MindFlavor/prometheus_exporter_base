@@ -1,5 +1,5 @@
 use prometheus_exporter_base::prelude::*;
-use std::fs::read_dir;
+use std::{fs::read_dir, net::SocketAddr};
 
 #[derive(Debug, Clone, Default)]
 struct MyOptions {}
@@ -20,30 +20,40 @@ fn calculate_file_size(path: &str) -> Result<u64, std::io::Error> {
 async fn main() {
     env_logger::init();
 
-    let addr = ([0, 0, 0, 0], 32221).into();
-    println!("starting exporter on {}", addr);
+    let addr: SocketAddr = ([0, 0, 0, 0], 32221).into();
+    let password = "SimplePassword".to_owned();
 
-    render_prometheus(addr, MyOptions::default(), |request, options| async move {
-        println!(
-            "in our render_prometheus(request == {:?}, options == {:?})",
-            request, options
-        );
+    let server_options = ServerOptions {
+        addr,
+        authorization: Authorization::Basic(password),
+    };
+    println!("starting exporter with options {:?}", addr);
 
-        let total_size_log = calculate_file_size("/var/log").unwrap();
+    render_prometheus(
+        server_options,
+        MyOptions::default(),
+        |request, options| async move {
+            println!(
+                "in our render_prometheus(request == {:?}, options == {:?})",
+                request, options
+            );
 
-        Ok(PrometheusMetric::build()
-            .with_name("folder_size")
-            .with_metric_type(MetricType::Counter)
-            .with_help("Size of the folder")
-            .build()
-            .render_and_append_instance(
-                &PrometheusInstance::new()
-                    .with_label("folder", "/var/log")
-                    .with_value(total_size_log)
-                    .with_current_timestamp()
-                    .expect("error getting the UNIX epoch"),
-            )
-            .render())
-    })
+            let total_size_log = calculate_file_size("/var/log").unwrap();
+
+            Ok(PrometheusMetric::build()
+                .with_name("folder_size")
+                .with_metric_type(MetricType::Counter)
+                .with_help("Size of the folder")
+                .build()
+                .render_and_append_instance(
+                    &PrometheusInstance::new()
+                        .with_label("folder", "/var/log")
+                        .with_value(total_size_log)
+                        .with_current_timestamp()
+                        .expect("error getting the UNIX epoch"),
+                )
+                .render())
+        },
+    )
     .await;
 }
