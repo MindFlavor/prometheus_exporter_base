@@ -30,7 +30,7 @@ hyper_server = ["hyper", "hyper-rustls", "http"]
 
 [dev-dependencies]
 tokio                = { version = "1.0", features = ["full"] }
-#clap 		     = { version = "4.0", features = ["derive"] }
+clap 		     = { version = "4.0", features = ["cargo"] }
 
 [[example]]
 name = "simple"
@@ -39,3 +39,4 @@ required-features = ["hyper_server"]
 [[example]]
 name = "folder_size"
 required-features = ["hyper_server"]
+required-dependencies = ["clap"]

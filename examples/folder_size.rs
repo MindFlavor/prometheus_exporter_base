@@ -1,4 +1,4 @@
-use clap::{crate_authors, crate_name, crate_version, Arg};
+use clap::{crate_authors, crate_name, crate_version, value_parser, Arg, ArgAction};
 use log::{info, trace};
 use prometheus_exporter_base::prelude::*;
 use std::env;
@@ -21,25 +21,25 @@ fn calculate_file_size(path: &str) -> Result<u64, std::io::Error> {
 
 #[tokio::main]
 async fn main() {
-    let matches = clap::App::new(crate_name!())
+    let matches = clap::Command::new(crate_name!())
         .version(crate_version!())
         .author(crate_authors!("\n"))
         .arg(
-            Arg::with_name("port")
-                .short("p")
+            Arg::new("port")
+                .short('p')
                 .help("exporter port")
-                .default_value("32148")
-                .takes_value(true),
+                .value_parser(value_parser!(u16))
+                .default_value("32148"),
         )
         .arg(
-            Arg::with_name("verbose")
-                .short("v")
+            Arg::new("verbose")
+                .short('v')
                 .help("verbose logging")
-                .takes_value(false),
+                .action(ArgAction::Count),
         )
         .get_matches();
 
-    if matches.is_present("verbose") {
+    if matches.get_count("verbose") > 0 {
         env::set_var(
             "RUST_LOG",
             format!("folder_size=trace,{}=trace", crate_name!()),
@@ -54,8 +54,7 @@ async fn main() {
 
     info!("using matches: {:?}", matches);
 
-    let bind = matches.value_of("port").unwrap();
-    let bind = u16::from_str_radix(&bind, 10).expect("port must be a valid number");
+    let bind: u16 = *matches.get_one("port").unwrap();
     let addr = ([0, 0, 0, 0], bind).into();
 
     info!("starting exporter on {}", addr);
