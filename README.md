@@ -88,7 +88,7 @@ As you can see, in order to keep things simple, the Hyper server does not enforc
 
 ## Testing
 
-Once running, test your exporter with any GET enabled tool (such as a browser) at `http://127.0.0.1:<your_exporter_port>/metric`.
+Once running, test your exporter with any GET enabled tool (such as a browser) at `http://127.0.0.1:<your_exporter_port>/metrics`.
 
 ## License 
 
