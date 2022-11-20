@@ -56,8 +56,6 @@ use serde::de::DeserializeOwned;
 #[cfg(feature = "hyper_server")]
 use std::future::Future;
 #[cfg(feature = "hyper_server")]
-use std::net::SocketAddr;
-#[cfg(feature = "hyper_server")]
 use std::sync::Arc;
 
 mod prometheus_metric;
@@ -74,6 +72,10 @@ pub mod prometheus_metric_builder;
 use hyper::http::header::CONTENT_TYPE;
 #[cfg(feature = "hyper_server")]
 use std::error::Error;
+#[cfg(feature = "hyper_server")]
+mod server_options;
+#[cfg(feature = "hyper_server")]
+use server_options::*;
 
 pub trait ToAssign {}
 #[derive(Debug, Clone, Copy)]
@@ -104,10 +106,14 @@ async fn extract_body(
 pub async fn create_string_future_from_hyper_request(
     request: hyper::Request<hyper::Body>,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let https = hyper_rustls::HttpsConnector::with_native_roots();
+    let https = hyper_rustls::HttpsConnectorBuilder::new()
+        .with_native_roots()
+        .https_only()
+        .enable_http1()
+        .build();
     let client = Client::builder().build::<_, hyper::Body>(https);
 
-    Ok(extract_body(client.request(request)).await?)
+    extract_body(client.request(request)).await
 }
 
 #[cfg(feature = "hyper_server")]
@@ -125,6 +131,7 @@ where
 
 #[cfg(feature = "hyper_server")]
 async fn serve_function<O, F, Fut>(
+    server_options: Arc<ServerOptions>,
     req: Request<Body>,
     f: F,
     options: Arc<O>,
@@ -139,7 +146,51 @@ where
         req.uri().path(),
         req.method()
     );
-    if req.uri().path() != "/metrics" {
+
+    trace!(
+        "received headers ==> \n{}",
+        req.headers()
+            .iter()
+            .map(|(header_name, header_value)| {
+                format!("{} => {}", header_name, header_value.to_str().unwrap())
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+
+    // check auth if necessary
+    let is_authorized = match &server_options.authorization {
+        Authorization::Basic(password) => req
+            .headers()
+            .iter()
+            .find(|(header_name, _)| header_name.as_str() == "authorization")
+            .map_or_else(
+                || Ok::<_, Box<dyn Error + Send + Sync>>(false),
+                |(_header_name, header_value)| {
+                    let header_value_as_str = header_value.to_str()?;
+                    let tokens: Vec<_> = header_value_as_str.split(' ').collect();
+                    if tokens.len() != 2 {
+                        return Ok(false);
+                    }
+                    if tokens[0] != "Basic" {
+                        return Ok(false);
+                    }
+                    trace!("Authorization tokens == {:?}", tokens);
+                    let base64_decoded = base64::decode(tokens[1])?;
+                    let password_from_header = std::str::from_utf8(&base64_decoded)?;
+                    Ok(format!(":{}", password) == password_from_header)
+                },
+            )
+            .unwrap_or(false),
+        Authorization::None => true,
+    };
+
+    if !is_authorized {
+        Ok(Response::builder()
+            .status(StatusCode::UNAUTHORIZED)
+            .body(hyper::Body::empty())
+            .unwrap())
+    } else if req.uri().path() != "/metrics" {
         Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(hyper::Body::empty())
@@ -172,24 +223,31 @@ where
 }
 
 #[cfg(feature = "hyper_server")]
-async fn run_server<O, F, Fut>(addr: SocketAddr, options: Arc<O>, f: F) -> Result<(), hyper::Error>
+async fn run_server<O, F, Fut>(
+    server_options: ServerOptions,
+    options: Arc<O>,
+    f: F,
+) -> Result<(), hyper::Error>
 where
     F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
     Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>> + Send + 'static,
     O: std::fmt::Debug + Sync + Send + 'static,
 {
-    info!("Listening on http://{}/metrics", addr);
+    info!("Listening on http://{}/metrics", server_options.addr);
 
     let f = f.clone();
     let options = options.clone();
+    let addr = server_options.addr;
+    let server_options = Arc::new(server_options);
 
     let make_service = make_service_fn(move |_| {
         let f = f.clone();
         let options = options.clone();
+        let server_options = server_options.clone();
 
         async move {
             Ok::<_, hyper::Error>(service_fn(move |req| {
-                serve_function(req, f.clone(), options.clone())
+                serve_function(server_options.clone(), req, f.clone(), options.clone())
             }))
         }
     });
@@ -200,7 +258,7 @@ where
 }
 
 #[cfg(feature = "hyper_server")]
-pub async fn render_prometheus<O, F, Fut>(addr: SocketAddr, options: O, f: F)
+pub async fn render_prometheus<O, F, Fut>(server_options: ServerOptions, options: O, f: F)
 where
     F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
     Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>> + Send + 'static,
@@ -208,7 +266,7 @@ where
 {
     let o = Arc::new(options);
 
-    let _ = run_server(addr, o, f).await.map_err(|err| {
+    let _ = run_server(server_options, o, f).await.map_err(|err| {
         error!("{:?}", err);
         eprintln!("Server failure: {:?}", err)
     });

@@ -71,13 +71,22 @@ For a more complete example please refer to the [examples](https://github.com/Mi
 To use Hyper server all you have to do is specify the `hyper_server` feature flag and call the `render_prometheus` function. This function requests you to pass: 
 
 1. The address/port to listen to. For example `([0, 0, 0, 0], 32221).into()` listens on every interface on port 32221.
+2. The authorization type. Right now is either allow every connection or authenticate with Basic auth (password). 
 2. An arbitrary struct to be passed back to your code (useful for command line arguments). If you don't need it, pass an empty struct.
 3. The *code* your exporter is supposed to do. This takes the form of a closure returning a boxed future. The closure itself will receive the http request data along with the aforementioned struct (point 2). The output is expected to be a string.
 
 For example: 
 
 ```rust
-render_prometheus(addr, MyOptions::default(), |request, options| {
+let addr: SocketAddr = ([0, 0, 0, 0], 32221).into();
+let password = "SimplePassword".to_owned();
+
+let server_options = ServerOptions {
+    addr,
+    authorization: Authorization::Basic(password),
+};
+
+render_prometheus(server_options, MyOptions::default(), |request, options| {
     async {
     	Ok("it works!".to_owned())
     }
@@ -89,6 +98,10 @@ As you can see, in order to keep things simple, the Hyper server does not enforc
 ## Testing
 
 Once running, test your exporter with any GET enabled tool (such as a browser) at `http://127.0.0.1:<your_exporter_port>/metrics`.
+
+## Changelog
+
+* Starting from version [1.4.0](https://github.com/MindFlavor/prometheus_exporter_base/releases/tag/1.4.0) the hyper server supports basic authentication. If you enable it, make sure to configure prometheus accordingly by specifying `basic_auth` with either `password` or `password_file`. Also note that the authorization header always include the username (which is unused here) so if you pass it manually prepend the colon char to your password *before* encoding it in base 64. Prometheus does that automatically, you don't have to do anything for it to work. Lastly, basic auth does not encrypt the password so make sure to use TLS if you need secrecy.
 
 ## License 
 

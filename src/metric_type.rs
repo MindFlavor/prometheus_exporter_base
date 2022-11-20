@@ -25,7 +25,7 @@ macro_rules! string_enum {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum $name {
             $($lit,)*
         }
