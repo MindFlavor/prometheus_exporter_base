@@ -3,6 +3,7 @@ use log::{info, trace};
 use prometheus_exporter_base::prelude::*;
 use std::env;
 use std::fs::read_dir;
+use std::net::SocketAddr;
 
 #[derive(Debug, Clone, Default)]
 struct MyOptions {}
@@ -55,34 +56,44 @@ async fn main() {
     info!("using matches: {:?}", matches);
 
     let bind: u16 = *matches.get_one("port").unwrap();
-    let addr = ([0, 0, 0, 0], bind).into();
+    let addr: SocketAddr = ([0, 0, 0, 0], bind).into();
 
-    info!("starting exporter on {}", addr);
+    let server_options = ServerOptions {
+        addr,
+        authorization: Authorization::None,
+    };
+    println!("starting exporter with options {:?}", addr);
 
-    render_prometheus(addr, MyOptions::default(), |request, options| async move {
-        trace!(
-            "in our render_prometheus(request == {:?}, options == {:?})",
-            request,
-            options
-        );
-
-        let mut pc = PrometheusMetric::build()
-            .with_name("folder_size")
-            .with_metric_type(MetricType::Counter)
-            .with_help("Size of the folder")
-            .build();
-
-        for folder in &vec!["/var/log", "/tmp"] {
-            pc.render_and_append_instance(
-                &PrometheusInstance::new()
-                    .with_label("folder", folder.as_ref())
-                    .with_value(calculate_file_size(folder).expect("cannot calculate folder size"))
-                    .with_current_timestamp()
-                    .expect("error getting the current UNIX epoch"),
+    render_prometheus(
+        server_options,
+        MyOptions::default(),
+        |request, options| async move {
+            trace!(
+                "in our render_prometheus(request == {:?}, options == {:?})",
+                request,
+                options
             );
-        }
 
-        Ok(pc.render())
-    })
+            let mut pc = PrometheusMetric::build()
+                .with_name("folder_size")
+                .with_metric_type(MetricType::Counter)
+                .with_help("Size of the folder")
+                .build();
+
+            for folder in &vec!["/var/log", "/tmp"] {
+                pc.render_and_append_instance(
+                    &PrometheusInstance::new()
+                        .with_label("folder", folder.as_ref())
+                        .with_value(
+                            calculate_file_size(folder).expect("cannot calculate folder size"),
+                        )
+                        .with_current_timestamp()
+                        .expect("error getting the current UNIX epoch"),
+                );
+            }
+
+            Ok(pc.render())
+        },
+    )
     .await;
 }
