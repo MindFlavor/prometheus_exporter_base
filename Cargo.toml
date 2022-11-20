@@ -40,4 +40,3 @@ required-features = ["hyper_server"]
 [[example]]
 name = "folder_size"
 required-features = ["hyper_server"]
-required-dependencies = ["clap"]
