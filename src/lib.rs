@@ -195,7 +195,7 @@ where
             .status(StatusCode::NOT_FOUND)
             .body(hyper::Body::empty())
             .unwrap())
-    } else if req.method() != "GET" {
+    } else if req.method() != "GET" && req.method() != "POST" {
         Ok(Response::builder()
             .status(StatusCode::METHOD_NOT_ALLOWED)
             .body(hyper::Body::empty())

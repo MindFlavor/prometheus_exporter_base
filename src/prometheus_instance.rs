@@ -1,5 +1,4 @@
 use crate::{RenderToPrometheus, ToAssign, Yes};
-use num::Num;
 use std::convert::Into;
 use std::marker::PhantomData;
 use std::time::{SystemTime, SystemTimeError, UNIX_EPOCH};
@@ -11,7 +10,7 @@ impl ToAssign for MissingValue {}
 #[derive(Debug, Clone)]
 pub struct PrometheusInstance<'a, N, ValueSet>
 where
-    N: Num + std::fmt::Display + std::fmt::Debug,
+    N: std::fmt::Display + std::fmt::Debug,
 {
     labels: Vec<(&'a str, &'a str)>,
     value: Option<N>,
@@ -21,7 +20,7 @@ where
 
 impl<'a, N> PrometheusInstance<'a, N, MissingValue>
 where
-    N: Num + std::fmt::Display + std::fmt::Debug,
+    N: std::fmt::Display + std::fmt::Debug,
 {
     pub fn new() -> Self {
         Self {
@@ -35,7 +34,7 @@ where
 
 impl<'a, N> Default for PrometheusInstance<'a, N, MissingValue>
 where
-    N: Num + std::fmt::Display + std::fmt::Debug,
+    N: std::fmt::Display + std::fmt::Debug,
 {
     fn default() -> Self {
         Self::new()
@@ -44,7 +43,7 @@ where
 
 impl<'a, N, ValueSet> PrometheusInstance<'a, N, ValueSet>
 where
-    N: Num + std::fmt::Display + std::fmt::Debug,
+    N: std::fmt::Display + std::fmt::Debug,
 {
     pub fn with_label<L, V>(self, l: L, v: V) -> Self
     where
@@ -128,7 +127,7 @@ where
 
 impl<'a, N> RenderToPrometheus for PrometheusInstance<'a, N, Yes>
 where
-    N: Num + std::fmt::Display + std::fmt::Debug,
+    N: std::fmt::Display + std::fmt::Debug,
 {
     fn render(&self) -> String {
         let mut s = String::new();
