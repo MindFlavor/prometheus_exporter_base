@@ -61,6 +61,7 @@ async fn main() {
     let server_options = ServerOptions {
         addr,
         authorization: Authorization::None,
+        tls_options: None,
     };
     println!("starting exporter with options {:?}", addr);
 
@@ -80,7 +81,7 @@ async fn main() {
                 .with_help("Size of the folder")
                 .build();
 
-            for folder in &vec!["/var/log", "/tmp"] {
+            for folder in &["/var/log", "/tmp"] {
                 pc.render_and_append_instance(
                     &PrometheusInstance::new()
                         .with_label("folder", folder.as_ref())

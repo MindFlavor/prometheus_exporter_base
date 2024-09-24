@@ -26,6 +26,7 @@ async fn main() {
     let server_options = ServerOptions {
         addr,
         authorization: Authorization::Basic(password),
+        tls_options: None,
     };
     println!("starting exporter with options {:?}", addr);
 

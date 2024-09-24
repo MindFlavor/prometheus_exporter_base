@@ -39,24 +39,48 @@
 //!     .render();
 //! ```
 
-extern crate serde_json;
 #[allow(unused_imports)]
 use log::{debug, error, info, trace, warn};
 
 #[cfg(feature = "hyper_server")]
 use http::StatusCode;
 #[cfg(feature = "hyper_server")]
-use hyper::{
-    body,
-    service::{make_service_fn, service_fn},
-    Body, Client, Request, Response, Server,
+use hyper::http::header::CONTENT_TYPE;
+#[cfg(feature = "hyper_server")]
+use hyper::{service::service_fn, Request, Response};
+#[cfg(feature = "hyper_server")]
+use rustls::{
+    pki_types::{CertificateDer, PrivateKeyDer},
+    server::VerifierBuilderError,
 };
 #[cfg(feature = "hyper_server")]
-use serde::de::DeserializeOwned;
+use std::error::Error;
 #[cfg(feature = "hyper_server")]
 use std::future::Future;
 #[cfg(feature = "hyper_server")]
 use std::sync::Arc;
+#[cfg(feature = "hyper_server")]
+use std::{fs, io};
+#[cfg(feature = "hyper_server")]
+use thiserror::Error;
+#[cfg(feature = "hyper_server")]
+mod server_options;
+#[cfg(feature = "hyper_server")]
+use http_body_util::Full;
+#[cfg(feature = "hyper_server")]
+use hyper::body::Bytes;
+#[cfg(feature = "hyper_server")]
+use hyper::server::conn::http1;
+#[cfg(feature = "hyper_server")]
+use hyper_util::rt::TokioIo;
+#[cfg(feature = "hyper_server")]
+use rustls::{server::WebPkiClientVerifier, RootCertStore, ServerConfig};
+#[cfg(feature = "hyper_server")]
+use server_options::*;
+#[cfg(feature = "hyper_server")]
+use tokio::net::TcpListener;
+#[cfg(feature = "hyper_server")]
+use tokio_rustls::TlsAcceptor;
 
 mod prometheus_metric;
 mod render_to_prometheus;
@@ -68,14 +92,6 @@ mod prometheus_instance;
 pub use metric_type::MetricType;
 pub use prometheus_instance::{MissingValue, PrometheusInstance};
 pub mod prometheus_metric_builder;
-#[cfg(feature = "hyper_server")]
-use hyper::http::header::CONTENT_TYPE;
-#[cfg(feature = "hyper_server")]
-use std::error::Error;
-#[cfg(feature = "hyper_server")]
-mod server_options;
-#[cfg(feature = "hyper_server")]
-use server_options::*;
 
 pub trait ToAssign {}
 #[derive(Debug, Clone, Copy)]
@@ -85,59 +101,15 @@ pub struct No {}
 impl ToAssign for Yes {}
 impl ToAssign for No {}
 
-#[inline]
-#[cfg(feature = "hyper_server")]
-async fn extract_body(
-    resp: hyper::client::ResponseFuture,
-) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let resp = resp.await?;
-    debug!("response == {:?}", resp);
-
-    let (_parts, body) = resp.into_parts();
-    let complete_body = body::to_bytes(body).await?;
-
-    let s = String::from_utf8(complete_body.to_vec())?;
-    trace!("extracted text == {}", s);
-
-    Ok(s)
-}
-
-#[cfg(feature = "hyper_server")]
-pub async fn create_string_future_from_hyper_request(
-    request: hyper::Request<hyper::Body>,
-) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let https = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_native_roots()
-        .https_only()
-        .enable_http1()
-        .build();
-    let client = Client::builder().build::<_, hyper::Body>(https);
-
-    extract_body(client.request(request)).await
-}
-
-#[cfg(feature = "hyper_server")]
-pub async fn create_deserialize_future_from_hyper_request<T>(
-    request: hyper::Request<hyper::Body>,
-) -> Result<T, Box<dyn Error + Send + Sync>>
-where
-    T: DeserializeOwned + std::fmt::Debug,
-{
-    let text = create_string_future_from_hyper_request(request).await?;
-    let t = serde_json::from_str(&text)?;
-    debug!("deserialized object == {:?}", t);
-    Ok(t)
-}
-
 #[cfg(feature = "hyper_server")]
 async fn serve_function<O, F, Fut>(
     server_options: Arc<ServerOptions>,
-    req: Request<Body>,
+    req: Request<hyper::body::Incoming>,
     f: F,
     options: Arc<O>,
-) -> Result<Response<Body>, hyper::Error>
+) -> Result<Response<Full<Bytes>>, hyper::Error>
 where
-    F: FnOnce(Request<Body>, Arc<O>) -> Fut,
+    F: FnOnce(Request<hyper::body::Incoming>, Arc<O>) -> Fut,
     Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>>,
     O: std::fmt::Debug,
 {
@@ -188,17 +160,17 @@ where
     if !is_authorized {
         Ok(Response::builder()
             .status(StatusCode::UNAUTHORIZED)
-            .body(hyper::Body::empty())
+            .body(Full::default())
             .unwrap())
     } else if req.uri().path() != "/metrics" {
         Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
-            .body(hyper::Body::empty())
+            .body(Full::default())
             .unwrap())
     } else if req.method() != "GET" {
         Ok(Response::builder()
             .status(StatusCode::METHOD_NOT_ALLOWED)
-            .body(hyper::Body::empty())
+            .body(Full::default())
             .unwrap())
     } else {
         // everything is ok, let's call the supplied future
@@ -208,14 +180,14 @@ where
             Ok(response) => Response::builder()
                 .status(StatusCode::OK)
                 .header(CONTENT_TYPE, "text/plain; version=0.0.4")
-                .body(Body::from(response))
+                .body(response.into())
                 .unwrap(),
             Err(err) => {
                 warn!("internal server error == {:?}", err);
 
                 Response::builder()
                     .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Body::from(err.to_string()))
+                    .body(err.to_string().into())
                     .unwrap()
             }
         })
@@ -227,40 +199,96 @@ async fn run_server<O, F, Fut>(
     server_options: ServerOptions,
     options: Arc<O>,
     f: F,
-) -> Result<(), hyper::Error>
+) -> Result<(), ServerError>
 where
-    F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
+    F: FnOnce(Request<hyper::body::Incoming>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
     Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>> + Send + 'static,
     O: std::fmt::Debug + Sync + Send + 'static,
 {
-    info!("Listening on http://{}/metrics", server_options.addr);
-
-    let f = f.clone();
-    let options = options.clone();
-    let addr = server_options.addr;
     let server_options = Arc::new(server_options);
 
-    let make_service = make_service_fn(move |_| {
+    let service = {
         let f = f.clone();
-        let options = options.clone();
         let server_options = server_options.clone();
+        service_fn(move |req: Request<hyper::body::Incoming>| {
+            let f = f.clone();
+            let options = options.clone();
+            let server_options = server_options.clone();
+            async move { serve_function(server_options, req, f, options).await }
+        })
+    };
 
-        async move {
-            Ok::<_, hyper::Error>(service_fn(move |req| {
-                serve_function(server_options.clone(), req, f.clone(), options.clone())
-            }))
+    let tcp_listener = TcpListener::bind(&server_options.addr).await?;
+    let tls_acceptor = if let Some(tls_options) = &server_options.tls_options {
+        let server_config = if let Some(client_ca) = &tls_options.client_certificate_ca_file {
+            let mut root_store = RootCertStore::empty();
+            for root in load_certs(client_ca)? {
+                root_store.add(root)?;
+            }
+            ServerConfig::builder().with_client_cert_verifier(
+                WebPkiClientVerifier::builder(Arc::new(root_store)).build()?,
+            )
+        } else {
+            ServerConfig::builder().with_no_client_auth()
         }
-    });
+        .with_single_cert(
+            load_certs(&tls_options.certificate_chain_file)?,
+            load_private_key(&tls_options.key_file)?,
+        )?;
 
-    let serve_future = Server::bind(&addr).serve(make_service);
+        info!("Listening on https://{}/metrics", server_options.addr);
+        Some(TlsAcceptor::from(Arc::new(server_config)))
+    } else {
+        info!("Listening on http://{}/metrics", server_options.addr);
+        None
+    };
 
-    serve_future.await
+    loop {
+        let service = service.clone();
+        let (tcp_stream, _remote_addr) = tcp_listener.accept().await?;
+        let tls_acceptor = tls_acceptor.clone();
+        tokio::spawn(async move {
+            if let Some(tls_acceptor) = tls_acceptor {
+                let tls_stream = match tls_acceptor.accept(tcp_stream).await {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("tls error: {e}");
+                        return;
+                    }
+                };
+                if let Err(e) = http1::Builder::new()
+                    .serve_connection(TokioIo::new(tls_stream), service)
+                    .await
+                {
+                    eprintln!("failed to serve connection: {e}");
+                }
+            } else if let Err(e) = http1::Builder::new()
+                .serve_connection(TokioIo::new(tcp_stream), service)
+                .await
+            {
+                eprintln!("failed to serve connection: {e}");
+            }
+        });
+    }
+}
+
+#[cfg(feature = "hyper_server")]
+#[derive(Debug, Error)]
+enum ServerError {
+    #[error("io error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("server error: {0}")]
+    ServerError(#[from] hyper::Error),
+    #[error("client certificate verifier error: {0}")]
+    ClientCertVerifierError(#[from] VerifierBuilderError),
+    #[error("rustls error: {0}")]
+    RustlsError(#[from] rustls::Error),
 }
 
 #[cfg(feature = "hyper_server")]
 pub async fn render_prometheus<O, F, Fut>(server_options: ServerOptions, options: O, f: F)
 where
-    F: FnOnce(Request<Body>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
+    F: FnOnce(Request<hyper::body::Incoming>, Arc<O>) -> Fut + Send + Clone + Sync + 'static,
     Fut: Future<Output = Result<String, Box<dyn Error + Send + Sync>>> + Send + 'static,
     O: std::fmt::Debug + Sync + Send + 'static,
 {
@@ -270,4 +298,36 @@ where
         error!("{:?}", err);
         eprintln!("Server failure: {:?}", err)
     });
+}
+
+#[cfg(feature = "hyper_server")]
+// Load public certificate from file.
+fn load_certs(filename: &str) -> io::Result<Vec<CertificateDer<'static>>> {
+    // Open certificate file.
+    let certfile = fs::File::open(filename).map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            format!("failed to open {}: {}", filename, e),
+        )
+    })?;
+    let mut reader = io::BufReader::new(certfile);
+
+    // Load and return certificate.
+    rustls_pemfile::certs(&mut reader).collect()
+}
+
+#[cfg(feature = "hyper_server")]
+// Load private key from file.
+fn load_private_key(filename: &str) -> io::Result<PrivateKeyDer<'static>> {
+    // Open keyfile.
+    let keyfile = fs::File::open(filename).map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            format!("failed to open {}: {}", filename, e),
+        )
+    })?;
+    let mut reader = io::BufReader::new(keyfile);
+
+    // Load and return a single private key.
+    rustls_pemfile::private_key(&mut reader).map(|key| key.unwrap())
 }
