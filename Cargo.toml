@@ -16,13 +16,13 @@ categories     = ["database"]
 
 [dependencies]
 log                  = "0.4.8"
-env_logger           = "0.9.3"
+env_logger           = "0.11.8"
 serde                = "1.0.110"
 serde_json           = "1.0.53"
 thiserror            = "1.0"
 num                  = "0.4"
 hyper                = {version = "0.14", features = ["server"], optional = true }
-hyper-rustls         = {version = "0.23", features = ["rustls-native-certs"], optional = true }
+hyper-rustls         = {version = "0.27", features = ["rustls-native-certs"], optional = true }
 http                 = {version = "0.2",  optional = true }
 base64 		     = { version = "0.13.1", optional = true }
 
@@ -30,8 +30,8 @@ base64 		     = { version = "0.13.1", optional = true }
 hyper_server = ["hyper", "hyper-rustls", "http", "base64"]
 
 [dev-dependencies]
-tokio                = { version = "1.0", features = ["full"] }
-clap 		     = { version = "4.0", features = ["cargo"] }
+tokio                = { version = "1.44", features = ["full"] }
+clap 		     = { version = "4.5", features = ["cargo"] }
 
 [[example]]
 name = "simple"
